@@ -55,6 +55,8 @@ extension Array {
 }
 
 import SwiftUI
+import SwiftData
+
 extension CGFloat {
     static let appHorizontalPadding: CGFloat = 16
     static let appSpacing: CGFloat = 20
@@ -346,5 +348,303 @@ struct EmojiPickerButton: View {
                 .frame(width: 0, height: 0)
                 .opacity(0)
         }
+    }
+}
+
+// MARK: - History Detail Views
+struct FoodEntryDetailView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @Bindable var entry: FoodEntry
+    
+    var body: some View {
+        Form {
+            Section {
+                HStack(spacing: 16) {
+                    Text(entry.foodItem?.emoji ?? "🍽")
+                        .font(.system(size: 40))
+                        .padding(8)
+                        .background(Color.accentColor.opacity(0.1))
+                        .clipShape(Circle())
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(entry.foodItem?.name ?? "Продукт")
+                            .font(.headline)
+                        if let dangerLevel = entry.foodItem?.dangerLevel {
+                            DangerBadge(level: dangerLevel)
+                        }
+                    }
+                }
+                .padding(.vertical, 8)
+            } header: {
+                Text("Информация о продукте")
+            }
+            
+            Section {
+                DatePicker("Дата и время", selection: $entry.timestamp)
+            } header: {
+                Text("Время приема")
+            }
+            
+            Section {
+                TextEditor(text: $entry.note)
+                    .frame(minHeight: 100)
+                    .overlay(alignment: .topLeading) {
+                        if entry.note.isEmpty {
+                            Text("Добавьте заметку...")
+                                .foregroundStyle(.tertiary)
+                                .padding(.top, 8)
+                                .padding(.leading, 4)
+                        }
+                    }
+            } header: {
+                Text("Заметка")
+            }
+        }
+        .navigationTitle("Детали записи")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Готово") { dismiss() }
+            }
+        }
+    }
+}
+
+struct MedicationEntryDetailView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @Bindable var entry: MedicationEntry
+    @Query(sort: \BodyArea.sortOrder) private var allBodyAreas: [BodyArea]
+    
+    var body: some View {
+        Form {
+            Section {
+                HStack(spacing: 16) {
+                    Text(entry.medication?.emoji ?? "💊")
+                        .font(.system(size: 40))
+                        .padding(8)
+                        .background(Color.medicationBlue.opacity(0.1))
+                        .clipShape(Circle())
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(entry.medication?.name ?? "Лекарство")
+                            .font(.headline)
+                        Text("Запись приема")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 8)
+            } header: {
+                Text("Лекарство")
+            }
+            
+            Section {
+                DatePicker("Дата и время", selection: $entry.timestamp)
+            } header: {
+                Text("Время приема")
+            }
+            
+            Section {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    ForEach(allBodyAreas) { area in
+                        let isSelected = entry.bodyAreas.contains(where: { $0.id == area.id })
+                        Button(action: {
+                            if isSelected {
+                                entry.bodyAreas.removeAll(where: { $0.id == area.id })
+                            } else {
+                                entry.bodyAreas.append(area)
+                            }
+                        }) {
+                            VStack(spacing: 4) {
+                                Text(area.emoji)
+                                    .font(.title3)
+                                Text(area.name)
+                                    .font(.caption2)
+                                    .lineLimit(1)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(isSelected ? Color.medicationBlue : Color(.tertiarySystemBackground))
+                            .foregroundStyle(isSelected ? .white : .primary)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(isSelected ? Color.clear : Color.secondary.opacity(0.1), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 8)
+            } header: {
+                Text("Зоны применения")
+            }
+            
+            Section {
+                TextEditor(text: $entry.note)
+                    .frame(minHeight: 100)
+                    .overlay(alignment: .topLeading) {
+                        if entry.note.isEmpty {
+                            Text("Добавьте заметку...")
+                                .foregroundStyle(.tertiary)
+                                .padding(.top, 8)
+                                .padding(.leading, 4)
+                        }
+                    }
+            } header: {
+                Text("Заметка")
+            }
+        }
+        .navigationTitle("Детали записи")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Готово") { dismiss() }
+            }
+        }
+    }
+}
+
+struct RatingTransactionDetailView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    let timestamp: Date
+    let ratings: [BodyAreaRating]
+    @State private var showEditSheet = false
+    
+    var body: some View {
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(timestamp.fullDateString)
+                        .font(.headline)
+                    Text(timestamp.timeString)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+            } header: {
+                Text("Время оценки")
+            }
+            
+            Section {
+                ForEach(ratings) { rating in
+                    HStack(spacing: 12) {
+                        Text(rating.bodyArea?.emoji ?? "❓")
+                            .font(.title3)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(rating.bodyArea?.name ?? "—")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            
+                            if !rating.note.isEmpty {
+                                Text(rating.note)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        HStack(spacing: 4) {
+                            Text(RatingLabel.emoji(for: rating.rating))
+                            Text("\(rating.rating)")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundStyle(Color.ratingColor(rating.rating))
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            } header: {
+                Text("Оценки по зонам (\(ratings.count))")
+            }
+        }
+        .navigationTitle("Детали оценки")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Изменить") { showEditSheet = true }
+            }
+        }
+        .sheet(isPresented: $showEditSheet) {
+            EditRatingViewFromHistory(ratings: ratings, timestamp: timestamp)
+        }
+    }
+}
+
+struct EditRatingViewFromHistory: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    let ratings: [BodyAreaRating]
+    let timestamp: Date
+    
+    @State private var editedRatings: [UUID: Int] = [:]
+    @State private var editedNotes: [UUID: String] = [:]
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    ForEach(ratings) { rating in
+                        VStack(spacing: 12) {
+                            HStack {
+                                Text(rating.bodyArea?.emoji ?? "❓")
+                                    .font(.title2)
+                                Text(rating.bodyArea?.name ?? "—")
+                                    .font(.headline)
+                                Spacer()
+                                let current = editedRatings[rating.id] ?? rating.rating
+                                Text(RatingLabel.emoji(for: current))
+                                    .font(.title3)
+                            }
+                            
+                            DangerLevelPicker(selection: Binding(
+                                get: { editedRatings[rating.id] ?? rating.rating },
+                                set: { editedRatings[rating.id] = $0 }
+                            ))
+                            
+                            TextField("Заметка...", text: Binding(
+                                get: { editedNotes[rating.id] ?? rating.note },
+                                set: { editedNotes[rating.id] = $0 }
+                            ))
+                            .textFieldStyle(.roundedBorder)
+                        }
+                        .padding()
+                        .cardStyle()
+                    }
+                }
+                .padding()
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Изменить")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Отмена") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Сохранить") {
+                        save()
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                }
+            }
+        }
+    }
+    
+    private func save() {
+        for rating in ratings {
+            if let newValue = editedRatings[rating.id] {
+                rating.rating = newValue
+            }
+            if let newNote = editedNotes[rating.id] {
+                rating.note = newNote
+            }
+        }
+        try? modelContext.save()
     }
 }

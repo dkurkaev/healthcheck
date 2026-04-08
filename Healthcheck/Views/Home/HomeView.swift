@@ -197,14 +197,22 @@ struct HomeView: View {
                     .listRowBackground(Color.clear)
             } else {
                 ForEach(transactions.prefix(30), id: \.key) { transaction in
-                    let avgRating = transaction.ratings.isEmpty ? 0 : transaction.ratings.map(\.rating).reduce(0, +) / transaction.ratings.count
-                    TimelineRow(
-                        emoji: RatingLabel.emoji(for: avgRating),
-                        title: "Оценка здоровья",
-                        subtitle: "\(transaction.ratings.count) зон · \(RatingLabel.text(for: avgRating))",
-                        time: transaction.timestamp.relativeString,
-                        accentColor: Color.ratingColor(avgRating)
-                    )
+                    let avgRating = transaction.ratings.isEmpty ? 0 : Int((Double(transaction.ratings.map(\.rating).reduce(0, +)) / Double(transaction.ratings.count)).rounded())
+                    ZStack {
+                        NavigationLink(destination: RatingTransactionDetailView(timestamp: transaction.timestamp, ratings: transaction.ratings)) {
+                            EmptyView()
+                        }
+                        .opacity(0)
+                        
+                        TimelineRow(
+                            emoji: RatingLabel.emoji(for: avgRating),
+                            title: "Оценка здоровья",
+                            subtitle: "\(transaction.ratings.count) зон · \(RatingLabel.text(for: avgRating))",
+                            time: transaction.timestamp.relativeString,
+                            accentColor: Color.ratingColor(avgRating)
+                        )
+                    }
+                    .buttonStyle(.plain)
                     .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -228,13 +236,21 @@ struct HomeView: View {
                     .listRowBackground(Color.clear)
             } else {
                 ForEach(recentFoodEntries.prefix(30)) { entry in
-                    TimelineRow(
-                        emoji: entry.foodItem?.emoji ?? "🍽",
-                        title: entry.foodItem?.name ?? "Продукт",
-                        subtitle: entry.note.isEmpty ? (DangerLabel.text(for: entry.foodItem?.dangerLevel ?? 1)) : entry.note,
-                        time: entry.timestamp.relativeString,
-                        accentColor: Color.dangerColor(entry.foodItem?.dangerLevel ?? 1)
-                    )
+                    ZStack {
+                        NavigationLink(destination: FoodEntryDetailView(entry: entry)) {
+                            EmptyView()
+                        }
+                        .opacity(0)
+                        
+                        TimelineRow(
+                            emoji: entry.foodItem?.emoji ?? "🍽",
+                            title: entry.foodItem?.name ?? "Продукт",
+                            subtitle: entry.note.isEmpty ? (DangerLabel.text(for: entry.foodItem?.dangerLevel ?? 1)) : entry.note,
+                            time: entry.timestamp.relativeString,
+                            accentColor: Color.dangerColor(entry.foodItem?.dangerLevel ?? 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
                     .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -260,13 +276,21 @@ struct HomeView: View {
             } else {
                 ForEach(recentMedicationEntries.prefix(30)) { entry in
                     let areas = entry.bodyAreas.map(\.name).joined(separator: ", ")
-                    TimelineRow(
-                        emoji: entry.medication?.emoji ?? "💊",
-                        title: entry.medication?.name ?? "Лекарство",
-                        subtitle: areas.isEmpty ? "Применение" : areas,
-                        time: entry.timestamp.relativeString,
-                        accentColor: .medicationBlue
-                    )
+                    ZStack {
+                        NavigationLink(destination: MedicationEntryDetailView(entry: entry)) {
+                            EmptyView()
+                        }
+                        .opacity(0)
+                        
+                        TimelineRow(
+                            emoji: entry.medication?.emoji ?? "💊",
+                            title: entry.medication?.name ?? "Лекарство",
+                            subtitle: areas.isEmpty ? "Применение" : areas,
+                            time: entry.timestamp.relativeString,
+                            accentColor: .medicationBlue
+                        )
+                    }
+                    .buttonStyle(.plain)
                     .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
