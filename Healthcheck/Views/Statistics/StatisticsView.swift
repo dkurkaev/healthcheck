@@ -22,6 +22,7 @@ struct StatisticsView: View {
     @State private var showExportSheet = false
     @State private var exportFileURL: URL?
     @State private var isExporting = false
+    @State private var selectedDate: Date?
     
     enum TimePeriod: String, CaseIterable {
         case day = "День"
@@ -57,11 +58,6 @@ struct StatisticsView: View {
                 }
                 .padding(.vertical)
             }
-            .onAppear {
-                if selectedBodyArea == nil && !bodyAreas.isEmpty {
-                    selectedBodyArea = bodyAreas.first
-                }
-            }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Статистика")
             .toolbar {
@@ -82,7 +78,7 @@ struct StatisticsView: View {
     
     // MARK: - Overview Card
     private var overviewCard: some View {
-        let cutoff = Date().daysAgo(selectedPeriod.days)
+        let cutoff = Calendar.current.date(byAdding: .day, value: -selectedPeriod.days, to: Date()) ?? Date()
         let periodFood = foodEntries.filter { $0.timestamp >= cutoff }
         let periodMeds = medicationEntries.filter { $0.timestamp >= cutoff }
         
@@ -112,7 +108,7 @@ struct StatisticsView: View {
     }
     
     private func totalRatings(since date: Date) -> Int {
-        bodyAreas.flatMap { $0.ratings.filter { $0.timestamp >= date } }.count
+        allRatings.filter { $0.timestamp >= date }.count
     }
     
     // MARK: - Area Trend Chart
@@ -138,8 +134,20 @@ struct StatisticsView: View {
         }()
         
         return VStack(alignment: .leading, spacing: 12) {
-            // Header copied EXACTLY from HomeView
+            // Header
             Menu {
+                Button(action: {
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        selectedBodyArea = nil
+                    }
+                }) {
+                    Label("Общее здоровье", systemImage: "figure.walk")
+                }
+                
+                Divider()
+                
                 ForEach(bodyAreas) { area in
                     Button(action: {
                         var transaction = Transaction()
@@ -153,7 +161,7 @@ struct StatisticsView: View {
                 }
             } label: {
                 HStack(spacing: 6) {
-                    Text(selectedBodyArea?.name ?? "Выберите зону")
+                    Text(selectedBodyArea?.name ?? "Общее здоровье")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundStyle(.primary)
@@ -169,126 +177,126 @@ struct StatisticsView: View {
             .buttonStyle(.plain)
             .padding(.horizontal, .appHorizontalPadding)
             
-            // The Chart Card
-            VStack(alignment: .leading, spacing: 12) {
-                if let area = selectedBodyArea {
-                    let ratingsForChart: [ChartPoint] = prepareChartData(for: area, since: cutoff)
-                    
-                    if ratingsForChart.isEmpty && selectedPeriod != .day {
-                        VStack(spacing: 12) {
-                            Image(systemName: "chart.line.uptrend.xyaxis")
-                                .font(.largeTitle)
-                                .foregroundStyle(.tertiary)
-                            Text("Нет данных за этот период")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+            // The Stocks Style Chart Card
+            VStack(alignment: .leading, spacing: 16) {
+                let ratingsForChart: [ChartPoint] = prepareChartData(for: selectedBodyArea, since: cutoff)
+                
+                // Header with dynamic values
+                HStack(alignment: .lastTextBaseline, spacing: 8) {
+                    if let selectedDate, 
+                       let point = ratingsForChart.min(by: { abs($0.date.timeIntervalSince(selectedDate)) < abs($1.date.timeIntervalSince(selectedDate)) }) {
+                        Text(String(format: "%.1f", point.value))
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                        Text(point.date.timeString)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    } else if let last = ratingsForChart.last {
+                        Text(String(format: "%.1f", last.value))
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                        Text("Сейчас")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .frame(height: 48)
+                
+                if ratingsForChart.isEmpty && selectedPeriod != .day {
+                    VStack(spacing: 12) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.largeTitle)
+                            .foregroundStyle(.tertiary)
+                        Text("Нет данных")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 200)
+                } else {
+                    Chart {
+                        ForEach(ratingsForChart) { point in
+                            LineMark(
+                                x: .value("Дата", point.date),
+                                y: .value("Оценка", point.value)
+                            )
+                            .interpolationMethod(.linear)
+                            .foregroundStyle(.blue)
+                            .lineStyle(StrokeStyle(lineWidth: 3))
+                            
+                            AreaMark(
+                                x: .value("Дата", point.date),
+                                y: .value("Оценка", point.value)
+                            )
+                            .interpolationMethod(.linear)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [.blue.opacity(0.15), .blue.opacity(0)]),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            
+                            PointMark(
+                                x: .value("Дата", point.date),
+                                y: .value("Оценка", point.value)
+                            )
+                            .foregroundStyle(.blue)
+                            .symbolSize(20)
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 200)
-                    } else {
-                        Chart {
-                            ForEach(ratingsForChart) { point in
-                                LineMark(
-                                    x: .value("Дата", point.date),
-                                    y: .value("Оценка", point.value)
-                                )
-                                .interpolationMethod(.catmullRom)
-                                .foregroundStyle(Color.ratingColor(Int(point.value.rounded())))
-                                
-                                PointMark(
-                                    x: .value("Дата", point.date),
-                                    y: .value("Оценка", point.value)
-                                )
-                                .foregroundStyle(Color.ratingColor(Int(point.value.rounded())))
-                                .symbolSize(selectedPeriod == .day ? 40 : 20)
-                                
-                                AreaMark(
-                                    x: .value("Дата", point.date),
-                                    y: .value("Оценка", point.value)
-                                )
-                                .interpolationMethod(.catmullRom)
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [
-                                            Color.ratingColor(Int(point.value.rounded())).opacity(0.15),
-                                            Color.ratingColor(Int(point.value.rounded())).opacity(0)
-                                        ]),
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
+                        
+                        if let selectedDate {
+                            RuleMark(x: .value("Selected", selectedDate))
+                                .foregroundStyle(.secondary.opacity(0.3))
+                                .zIndex(-1)
+                        }
+                        
+                        // Markers
+                        if selectedPeriod == .day {
+                            let dayFood = foodEntries.filter { $0.timestamp >= startOfToday && $0.timestamp <= endOfToday }
+                            ForEach(dayFood) { food in
+                                RuleMark(x: .value("Дата", food.timestamp))
+                                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                                    .foregroundStyle(.foodRed.opacity(0.4))
                             }
                             
-                            // Markers ONLY for 'Day' period
-                            if selectedPeriod == .day {
-                                let dayFood = foodEntries.filter { $0.timestamp >= startOfToday && $0.timestamp <= endOfToday }
-                                ForEach(dayFood) { food in
-                                    RuleMark(x: .value("Еда", food.timestamp))
-                                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                                        .foregroundStyle(.foodRed.opacity(0.8))
-                                        .annotation(position: .top, spacing: 0) {
-                                            Text(food.foodItem?.emoji ?? "🍽")
-                                                .font(.caption2)
-                                                .padding(4)
-                                                .background(Circle().fill(Color(.systemBackground)).shadow(radius: 1))
-                                        }
-                                }
-                                
+                            if let area = selectedBodyArea {
                                 let currentAreaName = area.name
-                                // Simplified medication filter to ensure visibility
                                 let dayMeds = medicationEntries.filter { med in
-                                    guard med.timestamp >= startOfToday && med.timestamp <= endOfToday else { return false }
-                                    // Robust area check
-                                    return med.bodyAreas.contains { $0.name.localizedStandardContains(currentAreaName) }
+                                    med.timestamp >= startOfToday && med.timestamp <= endOfToday && med.bodyAreas.contains { $0.name == currentAreaName }
                                 }
-                                
                                 ForEach(dayMeds) { med in
-                                    RuleMark(x: .value("Лекарство", med.timestamp))
-                                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 4])) // Slightly thicker
-                                        .foregroundStyle(.medicationBlue.opacity(0.8))
-                                        .annotation(position: .bottom, spacing: 0) {
-                                            Text(med.medication?.emoji ?? "💊")
-                                                .font(.caption2)
-                                                .padding(4)
-                                                .background(Circle().fill(Color(.systemBackground)).shadow(radius: 1))
-                                        }
-                                }
-                            }
-                        }
-                        .frame(height: 240)
-                        .padding(.top, 10)
-                        .padding(.trailing, 10)
-                        .chartXScale(domain: chartDomain)
-                        .chartYScale(domain: 0.8...5.5)
-                        .chartYAxis {
-                            AxisMarks(values: [1, 2, 3, 4, 5]) { value in
-                                AxisValueLabel {
-                                    if let intValue = value.as(Int.self) {
-                                        Text(RatingLabel.emoji(for: intValue))
-                                    }
-                                }
-                                AxisGridLine()
-                            }
-                        }
-                        .chartXAxis {
-                            switch selectedPeriod {
-                            case .day:
-                                AxisMarks(values: .stride(by: .hour, count: 4)) { value in
-                                    AxisGridLine()
-                                    AxisValueLabel(format: .dateTime.hour(), anchor: .top)
-                                }
-                            case .week:
-                                AxisMarks(values: .stride(by: .day)) { value in
-                                    AxisGridLine()
-                                    AxisValueLabel(format: .dateTime.day().month(), anchor: .top)
-                                }
-                            case .month:
-                                AxisMarks(values: .stride(by: .day, count: 5)) { _ in
-                                    AxisGridLine()
+                                    RuleMark(x: .value("Дата", med.timestamp))
+                                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                                        .foregroundStyle(.medicationBlue.opacity(0.4))
                                 }
                             }
                         }
                     }
+                    .frame(height: 200)
+                    .padding(.trailing, 10)
+                    .chartXScale(domain: chartDomain)
+                    .chartYScale(domain: 0.8...5.2)
+                    .chartYAxis(.hidden)
+                    .chartXAxis {
+                        switch selectedPeriod {
+                        case .day:
+                            AxisMarks(values: .stride(by: .hour, count: 4)) { value in
+                                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(.tertiary.opacity(0.5))
+                                AxisValueLabel(format: .dateTime.hour(), anchor: .top)
+                            }
+                        case .week:
+                            AxisMarks(values: .stride(by: .day)) { value in
+                                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(.tertiary.opacity(0.5))
+                                AxisValueLabel(format: .dateTime.day().month(), anchor: .top)
+                            }
+                        case .month:
+                            AxisMarks(values: .stride(by: .day, count: 5)) { _ in
+                                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(.tertiary.opacity(0.5))
+                            }
+                        }
+                    }
+                    .chartXSelection(value: $selectedDate)
                 }
             }
             .padding(.vertical)
@@ -297,26 +305,37 @@ struct StatisticsView: View {
         }
     }
     
-    // MARK: - Data Preparation Methods
-    struct ChartPoint: Identifiable {
-        let id = UUID()
-        let date: Date
-        let value: Double
-    }
-    
-    private func prepareChartData(for area: BodyArea, since date: Date) -> [ChartPoint] {
-        let areaRatings = allRatings.filter { $0.bodyArea?.name == area.name && $0.timestamp >= date }
+    // MARK: - Data Preparation
+    private func prepareChartData(for area: BodyArea?, since date: Date) -> [ChartPoint] {
+        let ratings: [BodyAreaRating]
+        if let area = area {
+            ratings = allRatings.filter { r in
+                r.bodyArea?.name == area.name && r.timestamp >= date
+            }
+        } else {
+            ratings = allRatings.filter { $0.timestamp >= date }
+        }
         
         if selectedPeriod == .day {
-            // Return raw data for day view
-            return areaRatings.map { ChartPoint(date: $0.timestamp, value: Double($0.rating)) }
+            if area != nil {
+                return ratings.filter { $0.rating > 0 }.map { ChartPoint(date: $0.timestamp, value: Double($0.rating)) }
+                    .sorted { $0.date < $1.date }
+            } else {
+                // Round timestamp to nearest 5 mins to group simultaneous ratings across areas
+                let grouped = Dictionary(grouping: ratings.filter { $0.rating > 0 }) { rating in
+                    let interval: TimeInterval = 300 // 5 minutes
+                    return Date(timeIntervalSince1970: floor(rating.timestamp.timeIntervalSince1970 / interval) * interval)
+                }
+                return grouped.map { (date, ratings) in
+                    let avg = Double(ratings.map(\.rating).reduce(0, +)) / Double(ratings.count)
+                    return ChartPoint(date: date, value: avg)
+                }
                 .sorted { $0.date < $1.date }
-        } else {
-            // Group by day and average for Week/Month
-            let grouped = Dictionary(grouping: areaRatings) { rating in
-                Calendar.current.startOfDay(for: rating.timestamp)
             }
-            
+        } else {
+            let grouped = Dictionary(grouping: ratings.filter { $0.rating > 0 }) { 
+                Calendar.current.startOfDay(for: $0.timestamp)
+            }
             return grouped.map { (date, ratings) in
                 let avg = Double(ratings.map(\.rating).reduce(0, +)) / Double(ratings.count)
                 return ChartPoint(date: date, value: avg)
@@ -396,22 +415,13 @@ struct StatisticsView: View {
     }
 }
 
-// MARK: - Share Sheet
-struct ShareSheet: UIViewControllerRepresentable {
-    let activityItems: [Any]
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        let controller = UIActivityViewController(
-            activityItems: activityItems,
-            applicationActivities: nil
-        )
-        return controller
-    }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+// MARK: - Supporting Views & Models
+struct ChartPoint: Identifiable {
+    let id = UUID()
+    let date: Date
+    let value: Double
 }
 
-// MARK: - Stat Box
 struct StatBox: View {
     let title: String
     let value: String
@@ -439,10 +449,16 @@ struct StatBox: View {
     }
 }
 
-// MARK: - Chart Data Point
-struct ChartDataPoint: Identifiable {
-    let id = UUID()
-    let date: Date
-    let value: Double
-    let category: String
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(
+            activityItems: activityItems,
+            applicationActivities: nil
+        )
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
