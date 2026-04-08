@@ -25,41 +25,24 @@ struct ApplyMedicationView: View {
                 VStack(spacing: 20) {
                     // Quick templates
                     if !templates.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 12) {
                             Text("Быстрые шаблоны")
                                 .font(.headline)
                             
-                            ForEach(templates) { template in
-                                Button(action: { applyTemplate(template) }) {
-                                    HStack {
-                                        Image(systemName: "rectangle.stack.fill")
-                                            .foregroundStyle(.medicationBlue)
-                                        
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(template.name)
-                                                .font(.subheadline)
-                                                .fontWeight(.medium)
-                                            
-                                            Text("\(template.medication?.emoji ?? "💊") → \(template.bodyAreas.map(\.name).joined(separator: ", "))")
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                                .lineLimit(1)
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                                ForEach(templates) { template in
+                                    LargeSelectableTile(
+                                        emoji: template.medication?.emoji ?? "💊",
+                                        title: template.name,
+                                        isSelected: false,
+                                        accentColor: .medicationBlue,
+                                        action: {
+                                            withAnimation {
+                                                applyTemplate(template)
+                                            }
                                         }
-                                        
-                                        Spacer()
-                                        
-                                        Image(systemName: "arrow.right.circle.fill")
-                                            .foregroundStyle(.medicationBlue)
-                                    }
-                                    .padding()
-                                    .background(Color.medicationBlue.opacity(0.05))
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.medicationBlue.opacity(0.2), lineWidth: 1)
                                     )
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                         .padding()
@@ -81,37 +64,22 @@ struct ApplyMedicationView: View {
                             .font(.headline)
                         
                         if medications.isEmpty {
-                            Text("Сначала добавьте лекарства")
+                            Text("Сначала добавьте лекарства в настройках")
                                 .foregroundStyle(.secondary)
                         } else {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 10) {
-                                    ForEach(medications) { med in
-                                        Button(action: { selectedMedication = med }) {
-                                            VStack(spacing: 6) {
-                                                Text(med.emoji)
-                                                    .font(.title2)
-                                                Text(med.name)
-                                                    .font(.caption)
-                                                    .lineLimit(1)
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                                ForEach(medications) { med in
+                                    LargeSelectableTile(
+                                        emoji: med.emoji,
+                                        title: med.name,
+                                        isSelected: selectedMedication?.id == med.id,
+                                        accentColor: .medicationBlue,
+                                        action: {
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                selectedMedication = med
                                             }
-                                            .frame(width: 80, height: 70)
-                                            .background(
-                                                selectedMedication?.id == med.id
-                                                    ? Color.medicationBlue.opacity(0.2)
-                                                    : Color(.tertiarySystemBackground)
-                                            )
-                                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(
-                                                        selectedMedication?.id == med.id ? Color.medicationBlue : Color.clear,
-                                                        lineWidth: 2
-                                                    )
-                                            )
                                         }
-                                        .buttonStyle(.plain)
-                                    }
+                                    )
                                 }
                             }
                         }

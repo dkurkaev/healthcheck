@@ -199,41 +199,22 @@ struct StatisticsView: View {
                 .font(.headline)
                 .padding(.horizontal)
             
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(bodyAreas) { area in
-                        Button(action: {
-                            withAnimation(.spring(response: 0.3)) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                ForEach(bodyAreas) { area in
+                    LargeSelectableTile(
+                        emoji: area.emoji,
+                        title: area.name,
+                        isSelected: selectedBodyArea?.id == area.id,
+                        accentColor: .blue,
+                        action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 selectedBodyArea = selectedBodyArea?.id == area.id ? nil : area
                             }
-                        }) {
-                            VStack(spacing: 4) {
-                                Text(area.emoji)
-                                    .font(.title3)
-                                Text(area.name)
-                                    .font(.caption2)
-                                    .lineLimit(1)
-                            }
-                            .frame(width: 70, height: 60)
-                            .background(
-                                selectedBodyArea?.id == area.id
-                                    ? Color.blue.opacity(0.2)
-                                    : Color(.tertiarySystemBackground)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(
-                                        selectedBodyArea?.id == area.id ? Color.blue : Color.clear,
-                                        lineWidth: 2
-                                    )
-                            )
                         }
-                        .buttonStyle(.plain)
-                    }
+                    )
                 }
-                .padding(.horizontal)
             }
+            .padding(.horizontal)
         }
     }
     
