@@ -38,48 +38,33 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             List {
-                // Header Sections
-                Section {
+                // Top Sections (Quick Actions & Status)
+                Group {
                     quickActionSection
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                }
-                .listSectionSeparator(.hidden)
-                
-                Section {
                     healthStatusCard
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
                 }
-                .listSectionSeparator(.hidden)
-                
-                // Switchable history timeline
-                Section {
-                    historySection
-                } header: {
-                    historyHeader
-                }
-                .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
+                .listRowSeparator(.hidden)
+                
+                // History Section Header (as a plain row for perfect alignment and color)
+                historyHeader
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 20, leading: 0, bottom: 8, trailing: 0))
+                    .listRowSeparator(.hidden)
+                
+                // History Items
+                historyBody
             }
-            .listStyle(.grouped)
+            .listStyle(.plain)
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Хелс чек")
-            .sheet(isPresented: $showAddFood) {
-                AddFoodView()
-            }
-            .sheet(isPresented: $showApplyMedication) {
-                ApplyMedicationView()
-            }
-            .sheet(isPresented: $showRateHealth) {
-                RateHealthView()
-            }
+            .sheet(isPresented: $showAddFood) { AddFoodView() }
+            .sheet(isPresented: $showApplyMedication) { ApplyMedicationView() }
+            .sheet(isPresented: $showRateHealth) { RateHealthView() }
         }
     }
     
-    // MARK: - Quick Actions
     private var quickActionSection: some View {
         HStack(spacing: 16) {
             QuickActionButton(
@@ -99,52 +84,45 @@ struct HomeView: View {
         .padding(.horizontal, .appHorizontalPadding)
     }
     
-    // MARK: - Health Status Card
     private var healthStatusCard: some View {
         Button(action: { showRateHealth = true }) {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Оценка здоровья")
                         .font(.headline)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.white)
                     
                     if let lastRating = recentRatings.first {
                         if lastRating.timestamp.isToday {
                             Label("Оценено сегодня в \(lastRating.timestamp.timeString)", systemImage: "checkmark.circle.fill")
                                 .font(.subheadline)
-                                .foregroundStyle(.green)
+                                .foregroundStyle(.white.opacity(0.9))
                         } else {
                             Label("Последняя оценка: \(lastRating.timestamp.relativeString)", systemImage: "exclamationmark.circle.fill")
                                 .font(.subheadline)
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(.white.opacity(0.9))
                         }
                     } else {
                         Label("Ещё не оценивали", systemImage: "questionmark.circle.fill")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.white.opacity(0.8))
                     }
                 }
-                
                 Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
+                Image(systemName: "chevron.right").font(.title3).foregroundStyle(.white)
             }
             .padding()
-            .cardStyle()
+            .background(Color.green)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
             .padding(.horizontal, .appHorizontalPadding)
         }
         .buttonStyle(.plain)
     }
     
-    // MARK: - History Section
-    // MARK: - History Section
-    // MARK: - History Section
     private var historyHeader: some View {
         Menu {
             ForEach(HistoryType.allCases, id: \.self) { type in
-                Button(action: { 
+                Button(action: {
                     var transaction = Transaction()
                     transaction.disablesAnimations = true
                     withTransaction(transaction) {
@@ -159,7 +137,7 @@ struct HomeView: View {
                 Text(selectedHistoryType.rawValue)
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.primary) // Solid black
                 
                 Image(systemName: "chevron.down.circle.fill")
                     .font(.body)
@@ -170,22 +148,16 @@ struct HomeView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .textCase(nil) // Disable default section header caps
         .padding(.horizontal, .appHorizontalPadding)
-        .padding(.bottom, 8)
     }
 
-    private var historySection: some View {
-        Group {
-            if selectedHistoryType == .ratings {
-                ratingsList
-            } else if selectedHistoryType == .food {
-                foodHistoryList
-            } else {
-                medsHistoryList
-            }
+    @ViewBuilder
+    private var historyBody: some View {
+        switch selectedHistoryType {
+        case .ratings: ratingsList
+        case .food: foodHistoryList
+        case .meds: medsHistoryList
         }
-        .animation(nil, value: selectedHistoryType)
     }
     
     private var ratingsList: some View {
@@ -193,13 +165,13 @@ struct HomeView: View {
         return Group {
             if transactions.isEmpty {
                 emptyHistoryView(message: "Пока нет оценок")
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
             } else {
-                ForEach(transactions.prefix(30), id: \.key) { transaction in
-                    let avgRating = transaction.ratings.isEmpty ? 0 : Int((Double(transaction.ratings.map(\.rating).reduce(0, +)) / Double(transaction.ratings.count)).rounded())
+                ForEach(transactions.prefix(25), id: \.key) { transaction in
+                    let ratings = transaction.ratings
+                    let avgRating = ratings.isEmpty ? 0 : Int((Double(ratings.map(\.rating).reduce(0, +)) / Double(ratings.count)).rounded())
+                    
                     ZStack {
-                        NavigationLink(destination: RatingTransactionDetailView(timestamp: transaction.timestamp, ratings: transaction.ratings)) {
+                        NavigationLink(destination: RatingTransactionDetailView(timestamp: transaction.timestamp, ratings: ratings)) {
                             EmptyView()
                         }
                         .opacity(0)
@@ -207,23 +179,23 @@ struct HomeView: View {
                         TimelineRow(
                             emoji: RatingLabel.emoji(for: avgRating),
                             title: "Оценка здоровья",
-                            subtitle: "\(transaction.ratings.count) зон · \(RatingLabel.text(for: avgRating))",
+                            subtitle: "\(ratings.count) зон · \(RatingLabel.text(for: avgRating))",
                             time: transaction.timestamp.relativeString,
                             accentColor: Color.ratingColor(avgRating)
                         )
                     }
-                    .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
-                            deleteRatingTransaction(transaction.ratings)
+                            ratings.forEach { modelContext.delete($0) }
+                            try? modelContext.save()
                         } label: {
                             Label("Удалить", systemImage: "trash")
                         }
                     }
                 }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
             }
         }
     }
@@ -232,8 +204,6 @@ struct HomeView: View {
         Group {
             if recentFoodEntries.isEmpty {
                 emptyHistoryView(message: "Пока нет записей о еде")
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
             } else {
                 ForEach(recentFoodEntries.prefix(30)) { entry in
                     ZStack {
@@ -250,10 +220,6 @@ struct HomeView: View {
                             accentColor: Color.dangerColor(entry.foodItem?.dangerLevel ?? 1)
                         )
                     }
-                    .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
                             modelContext.delete(entry)
@@ -263,6 +229,9 @@ struct HomeView: View {
                         }
                     }
                 }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
             }
         }
     }
@@ -271,8 +240,6 @@ struct HomeView: View {
         Group {
             if recentMedicationEntries.isEmpty {
                 emptyHistoryView(message: "Пока нет записей о лекарствах")
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
             } else {
                 ForEach(recentMedicationEntries.prefix(30)) { entry in
                     let areas = entry.bodyAreas.map(\.name).joined(separator: ", ")
@@ -287,13 +254,9 @@ struct HomeView: View {
                             title: entry.medication?.name ?? "Лекарство",
                             subtitle: areas.isEmpty ? "Применение" : areas,
                             time: entry.timestamp.relativeString,
-                            accentColor: .medicationBlue
+                            accentColor: Color.medicationBlue
                         )
                     }
-                    .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
                             modelContext.delete(entry)
@@ -303,42 +266,35 @@ struct HomeView: View {
                         }
                     }
                 }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
             }
         }
     }
     
     private func emptyHistoryView(message: String) -> some View {
         VStack(spacing: 8) {
-            Image(systemName: "moon.stars")
-                .font(.system(size: 40))
-                .foregroundStyle(.secondary)
-            Text(message)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            Image(systemName: "moon.stars").font(.system(size: 40)).foregroundStyle(.secondary)
+            Text(message).font(.subheadline).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 30)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
     }
     
-    private func deleteRatingTransaction(_ ratings: [BodyAreaRating]) {
-        for rating in ratings {
-            modelContext.delete(rating)
-        }
-        try? modelContext.save()
-    }
-    
-    // MARK: - Helpers
     private func groupRatingsIntoTransactions(_ ratings: [BodyAreaRating]) -> [(key: String, timestamp: Date, ratings: [BodyAreaRating])] {
         let grouped = Dictionary(grouping: ratings) { rating -> String in
             let calendar = Calendar.current
             let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: rating.timestamp)
             return "\(components.year ?? 0)-\(components.month ?? 0)-\(components.day ?? 0)-\(components.hour ?? 0)-\(components.minute ?? 0)"
         }
-        
         return grouped.map { key, ratings in
             (key: key, timestamp: ratings.first?.timestamp ?? Date(), ratings: ratings.sorted { ($0.bodyArea?.sortOrder ?? 0) < ($1.bodyArea?.sortOrder ?? 0) })
-        }
-        .sorted { $0.timestamp > $1.timestamp }
+        }.sorted { $0.timestamp > $1.timestamp }
     }
 }
 
@@ -362,6 +318,7 @@ struct TimelineRow: View {
                 Text(title)
                     .font(.subheadline)
                     .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
                 
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
@@ -373,21 +330,20 @@ struct TimelineRow: View {
             
             Spacer()
             
-            Text(time)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
+            HStack(spacing: 8) {
+                Text(time)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.tertiary)
+            }
         }
         .padding()
-        .cardStyle()
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
-}
-
-#Preview {
-    HomeView()
-        .modelContainer(for: [
-            BodyArea.self, BodyAreaRating.self,
-            FoodItem.self, FoodEntry.self,
-            Medication.self, MedicationTemplate.self, MedicationEntry.self
-        ], inMemory: true)
 }

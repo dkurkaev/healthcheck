@@ -126,9 +126,9 @@ struct BodyAreaRow: View {
                     }
                     
                     if let rating = bodyArea.latestRating {
-                        Text("\(RatingLabel.emoji(for: rating.rating)) \(RatingLabel.text(for: rating.rating))")
+                        Text(rating.timestamp.relativeString)
                             .font(.caption)
-                            .foregroundStyle(Color.ratingColor(rating.rating))
+                            .foregroundStyle(.secondary)
                     }
                 }
             }

@@ -473,7 +473,7 @@ struct FoodManagementView: View {
             }
             
             ForEach(foodItems) { food in
-                NavigationLink(destination: FoodEditView(food: food)) {
+                NavigationLink(destination: CreateFoodItemView(food: food)) {
                     HStack(spacing: 12) {
                         Text(food.emoji)
                             .font(.title2)
@@ -525,67 +525,6 @@ struct FoodManagementView: View {
         }
         .sheet(isPresented: $showAddFood) {
             CreateFoodItemView()
-        }
-    }
-}
-
-// MARK: - Food Edit View
-struct FoodEditView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
-    @Bindable var food: FoodItem
-    
-    @State private var editName: String = ""
-    @State private var editEmoji: String = ""
-    @State private var editDangerLevel: Int = 1
-    @State private var editIsFavorite: Bool = false
-    @State private var showDeleteConfirmation = false
-    
-    var body: some View {
-        List {
-            FoodItemFields(name: $editName, emoji: $editEmoji, dangerLevel: $editDangerLevel, isFavorite: $editIsFavorite)
-            
-            Section {
-                HStack {
-                    Text("Записей")
-                    Spacer()
-                    Text("\(food.entries.count)")
-                        .foregroundStyle(.secondary)
-                }
-            }
-            
-            Section {
-                Button(role: .destructive) {
-                    showDeleteConfirmation = true
-                } label: {
-                    Label("Удалить продукт", systemImage: "trash.fill")
-                        .foregroundStyle(.red)
-                }
-            }
-        }
-        .navigationTitle(food.name)
-        .onAppear {
-            editName = food.name
-            editEmoji = food.emoji
-            editDangerLevel = food.dangerLevel
-            editIsFavorite = food.isFavorite
-        }
-        .onDisappear {
-            if !editName.isEmpty { food.name = editName }
-            if !editEmoji.isEmpty { food.emoji = editEmoji }
-            food.dangerLevel = editDangerLevel
-            food.isFavorite = editIsFavorite
-            try? modelContext.save()
-        }
-        .alert("Удалить продукт?", isPresented: $showDeleteConfirmation) {
-            Button("Удалить", role: .destructive) {
-                modelContext.delete(food)
-                try? modelContext.save()
-                dismiss()
-            }
-            Button("Отмена", role: .cancel) {}
-        } message: {
-            Text("Продукт \"\(food.name)\" и все связанные записи будут удалены.")
         }
     }
 }

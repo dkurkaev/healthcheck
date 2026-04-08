@@ -561,11 +561,21 @@ struct EditRatingViewFromHistory: View {
     
     @State private var editedRatings: [UUID: Int] = [:]
     @State private var editedNotes: [UUID: String] = [:]
+    @State private var editTimestamp: Date = Date()
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    // Time Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Время оценки")
+                            .font(.headline)
+                        DatePicker("Выберите время", selection: $editTimestamp)
+                    }
+                    .padding()
+                    .cardStyle()
+                    
                     ForEach(ratings) { rating in
                         VStack(spacing: 12) {
                             HStack {
@@ -625,3 +635,4 @@ struct EditRatingViewFromHistory: View {
         try? modelContext.save()
     }
 }
+

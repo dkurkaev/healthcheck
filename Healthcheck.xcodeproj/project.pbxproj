@@ -22,10 +22,10 @@
 		6918D19E5EFF49585A1C89EF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF751C641C6EA22B7875EAA8 /* ContentView.swift */; };
 		69B4CFE4B97DDDB2D3261D62 /* FoodLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95420682C4B37C23F255403E /* FoodLogView.swift */; };
 		6BE48B79E7A84A8E5BAB17C6 /* FoodItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A561E029D10714FD8407241 /* FoodItemRow.swift */; };
+		777F12A80D6471CA69E89881 /* HealthChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D4CA073ABB570301ECFD33 /* HealthChartView.swift */; };
 		80670DBC029CA0D69D33A9D7 /* QuickActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74542E36C8C1FE4BA873A77E /* QuickActionButton.swift */; };
 		82694976DA904831B3B7EC15 /* DataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0DB38971F1AAB4646C8F51 /* DataSeeder.swift */; };
 		964216401CB62D81462534FC /* CreateFoodItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47667109BF720E60DBAFB00D /* CreateFoodItemView.swift */; };
-		989E9D24D36548F49DFAAC67 /* BodyAreaChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4815AB2199DC87F9A2DF9DA3 /* BodyAreaChartView.swift */; };
 		9DBAAB27021229E8320B8724 /* XLKit in Frameworks */ = {isa = PBXBuildFile; productRef = 28A75BB285AA58368C12D0B7 /* XLKit */; };
 		9E83BAC4141044257F2A4AA6 /* ApplyMedicationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3710168E92EBF3322CA844A /* ApplyMedicationView.swift */; };
 		A4FD50A6E924C5C034086DF9 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05F6EFC16279A592D859DDAD /* HomeView.swift */; };
@@ -55,7 +55,6 @@
 		34638965B67EB4708217AD74 /* ExcelExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcelExportService.swift; sourceTree = "<group>"; };
 		3F2C5FE49DFF5537D5CE6B32 /* MedicationEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationEntry.swift; sourceTree = "<group>"; };
 		47667109BF720E60DBAFB00D /* CreateFoodItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFoodItemView.swift; sourceTree = "<group>"; };
-		4815AB2199DC87F9A2DF9DA3 /* BodyAreaChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAreaChartView.swift; sourceTree = "<group>"; };
 		4BBAECEB17813F735996F34D /* AddMedicationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMedicationView.swift; sourceTree = "<group>"; };
 		510D14AC12E8D4159B25F7AE /* BodyAreasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAreasView.swift; sourceTree = "<group>"; };
 		5A561E029D10714FD8407241 /* FoodItemRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItemRow.swift; sourceTree = "<group>"; };
@@ -75,6 +74,7 @@
 		C4AC66D75D0ADC36286DC1AB /* FoodItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItem.swift; sourceTree = "<group>"; };
 		D0DDC3F6F73A1CE4158092D8 /* RatingHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingHistoryView.swift; sourceTree = "<group>"; };
 		D2073747E07E9CFAE361B2C3 /* FoodEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodEntry.swift; sourceTree = "<group>"; };
+		D5D4CA073ABB570301ECFD33 /* HealthChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthChartView.swift; sourceTree = "<group>"; };
 		DF751C641C6EA22B7875EAA8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		E52BC7CF398835FCDC2BC108 /* CorrelationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorrelationView.swift; sourceTree = "<group>"; };
 		E6EDF6A7C6335A16F3B493E4 /* MedicationTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationTemplate.swift; sourceTree = "<group>"; };
@@ -110,6 +110,7 @@
 			isa = PBXGroup;
 			children = (
 				9F2D518638D3D7EDD42FBDA4 /* AppTextField.swift */,
+				D5D4CA073ABB570301ECFD33 /* HealthChartView.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -193,7 +194,6 @@
 		979455732BD779D1A92322BA /* Statistics */ = {
 			isa = PBXGroup;
 			children = (
-				4815AB2199DC87F9A2DF9DA3 /* BodyAreaChartView.swift */,
 				E52BC7CF398835FCDC2BC108 /* CorrelationView.swift */,
 				D0DDC3F6F73A1CE4158092D8 /* RatingHistoryView.swift */,
 				29A0A1F20321A73C8A7380A4 /* StatisticsView.swift */,
@@ -307,7 +307,6 @@
 				F11AAED6C33AD1F5F050D35A /* AppTextField.swift in Sources */,
 				9E83BAC4141044257F2A4AA6 /* ApplyMedicationView.swift in Sources */,
 				18265BA620FF4AC2FA1EFDF8 /* BodyArea.swift in Sources */,
-				989E9D24D36548F49DFAAC67 /* BodyAreaChartView.swift in Sources */,
 				2C57189A9C68B3C9EFA83725 /* BodyAreaDetailView.swift in Sources */,
 				1A9958ABA75C9E777EA56A33 /* BodyAreaRating.swift in Sources */,
 				CD22A218C8283F0A1945BC83 /* BodyAreasView.swift in Sources */,
@@ -322,6 +321,7 @@
 				E8DA207ABBC812889D63942A /* FoodItem.swift in Sources */,
 				6BE48B79E7A84A8E5BAB17C6 /* FoodItemRow.swift in Sources */,
 				69B4CFE4B97DDDB2D3261D62 /* FoodLogView.swift in Sources */,
+				777F12A80D6471CA69E89881 /* HealthChartView.swift in Sources */,
 				A9DCCDC8D7D4A23960959EC9 /* HealthcheckApp.swift in Sources */,
 				A4FD50A6E924C5C034086DF9 /* HomeView.swift in Sources */,
 				577C04829882EBA183333602 /* Medication.swift in Sources */,
