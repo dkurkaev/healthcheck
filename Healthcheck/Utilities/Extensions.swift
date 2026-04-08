@@ -55,6 +55,11 @@ extension Array {
 }
 
 import SwiftUI
+extension CGFloat {
+    static let appHorizontalPadding: CGFloat = 16
+    static let appSpacing: CGFloat = 20
+}
+
 extension View {
     func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
