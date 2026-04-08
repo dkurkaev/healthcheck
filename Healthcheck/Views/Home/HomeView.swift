@@ -19,6 +19,21 @@ struct HomeView: View {
     @State private var showAddFood = false
     @State private var showApplyMedication = false
     @State private var showRateHealth = false
+    @State private var selectedHistoryType: HistoryType = .ratings
+    
+    enum HistoryType: String, CaseIterable {
+        case ratings = "Оценки"
+        case food = "Еда"
+        case meds = "Лекарства"
+        
+        var icon: String {
+            switch self {
+            case .ratings: return "star.bubble"
+            case .food: return "fork.knife"
+            case .meds: return "pills"
+            }
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -30,8 +45,8 @@ struct HomeView: View {
                     // Health Rating Status
                     healthStatusCard
                     
-                    // Ratings timeline
-                    ratingsSection
+                    // Switchable history timeline
+                    historySection
                 }
                 .padding()
             }
@@ -106,27 +121,60 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
     
-    // MARK: - Ratings Section (all history, newest first)
-    private var ratingsSection: some View {
+    // MARK: - History Section
+    // MARK: - History Section
+    // MARK: - History Section
+    private var historySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Оценки")
-                .font(.title2)
-                .fontWeight(.bold)
-            
-            // Group ratings by transaction (same minute)
-            let transactions = groupRatingsIntoTransactions(recentRatings)
-            
-            if transactions.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "moon.stars")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.secondary)
-                    Text("Пока нет оценок")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+            Menu {
+                ForEach(HistoryType.allCases, id: \.self) { type in
+                    Button(action: { 
+                        var transaction = Transaction()
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) {
+                            selectedHistoryType = type
+                        }
+                    }) {
+                        Label(type.rawValue, systemImage: type.icon)
+                    }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 30)
+            } label: {
+                HStack(spacing: 6) {
+                    Text(selectedHistoryType.rawValue)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.primary)
+                    
+                    Image(systemName: "chevron.down.circle.fill")
+                        .font(.body)
+                        .foregroundStyle(.blue)
+                    
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading) // Keep pinned to left
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 8)
+            
+            Group {
+                if selectedHistoryType == .ratings {
+                    ratingsList
+                } else if selectedHistoryType == .food {
+                    foodHistoryList
+                } else {
+                    medsHistoryList
+                }
+            }
+        }
+        .animation(nil, value: selectedHistoryType) // Kill ANY layout shifts
+    }
+    
+    private var ratingsList: some View {
+        let transactions = groupRatingsIntoTransactions(recentRatings)
+        return Group {
+            if transactions.isEmpty {
+                emptyHistoryView(message: "Пока нет оценок")
             } else {
                 ForEach(transactions.prefix(30), id: \.key) { transaction in
                     let avgRating = transaction.ratings.isEmpty ? 0 : transaction.ratings.map(\.rating).reduce(0, +) / transaction.ratings.count
@@ -140,6 +188,56 @@ struct HomeView: View {
                 }
             }
         }
+    }
+    
+    private var foodHistoryList: some View {
+        Group {
+            if recentFoodEntries.isEmpty {
+                emptyHistoryView(message: "Пока нет записей о еде")
+            } else {
+                ForEach(recentFoodEntries.prefix(30)) { entry in
+                    TimelineRow(
+                        emoji: entry.foodItem?.emoji ?? "🍽",
+                        title: entry.foodItem?.name ?? "Продукт",
+                        subtitle: entry.note.isEmpty ? (DangerLabel.text(for: entry.foodItem?.dangerLevel ?? 1)) : entry.note,
+                        time: entry.timestamp.relativeString,
+                        accentColor: Color.dangerColor(entry.foodItem?.dangerLevel ?? 1)
+                    )
+                }
+            }
+        }
+    }
+    
+    private var medsHistoryList: some View {
+        Group {
+            if recentMedicationEntries.isEmpty {
+                emptyHistoryView(message: "Пока нет записей о лекарствах")
+            } else {
+                ForEach(recentMedicationEntries.prefix(30)) { entry in
+                    let areas = entry.bodyAreas.map(\.name).joined(separator: ", ")
+                    TimelineRow(
+                        emoji: entry.medication?.emoji ?? "💊",
+                        title: entry.medication?.name ?? "Лекарство",
+                        subtitle: areas.isEmpty ? "Применение" : areas,
+                        time: entry.timestamp.relativeString,
+                        accentColor: .medicationBlue
+                    )
+                }
+            }
+        }
+    }
+    
+    private func emptyHistoryView(message: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: "moon.stars")
+                .font(.system(size: 40))
+                .foregroundStyle(.secondary)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 30)
     }
     
     // MARK: - Helpers
