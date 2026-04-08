@@ -7,46 +7,31 @@ struct BodyAreasView: View {
     @Query(sort: \BodyArea.sortOrder)
     private var bodyAreas: [BodyArea]
     
-    @State private var showAddArea = false
-    @State private var showRateHealth = false
-    @State private var newAreaName = ""
-    @State private var newAreaEmoji = "🔵"
-    @State private var newAreaIsSkin = false
-    
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    // Rate All Button
-                    Button(action: { showRateHealth = true }) {
-                        HStack {
-                            Image(systemName: "heart.text.square.fill")
-                                .font(.title2)
-                            Text("Оценить все зоны")
-                                .fontWeight(.semibold)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            LinearGradient(
-                                colors: [.blue, .cyan],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 4)
-                    }
-                    .padding(.horizontal)
-                    
                     // Body Areas List
                     LazyVStack(spacing: 12) {
-                        ForEach(bodyAreas) { area in
-                            NavigationLink(destination: BodyAreaDetailView(bodyArea: area)) {
-                                BodyAreaRow(bodyArea: area)
+                        if bodyAreas.isEmpty {
+                            VStack(spacing: 12) {
+                                Image(systemName: "figure.stand")
+                                    .font(.system(size: 60))
+                                    .foregroundStyle(.secondary)
+                                Text("Зоны не настроены")
+                                    .font(.headline)
+                                Text("Настройте зоны тела в меню Настройки")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
-                            .buttonStyle(.plain)
+                            .padding(.vertical, 100)
+                        } else {
+                            ForEach(bodyAreas) { area in
+                                NavigationLink(destination: BodyAreaDetailView(bodyArea: area)) {
+                                    BodyAreaRow(bodyArea: area)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -55,46 +40,7 @@ struct BodyAreasView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Зоны тела")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button(action: { showAddArea = true }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                    }
-                }
-            }
-            .sheet(isPresented: $showRateHealth) {
-                RateHealthView()
-            }
-            .alert("Новая зона тела", isPresented: $showAddArea) {
-                TextField("Название", text: $newAreaName)
-                TextField("Эмоджи", text: $newAreaEmoji)
-                Toggle("Связана с кожей", isOn: $newAreaIsSkin)
-                
-                Button("Добавить") {
-                    addArea()
-                }
-                Button("Отмена", role: .cancel) {
-                    newAreaName = ""
-                    newAreaEmoji = "🔵"
-                    newAreaIsSkin = false
-                }
-            }
         }
-    }
-    
-    private func addArea() {
-        guard !newAreaName.isEmpty else { return }
-        let area = BodyArea(
-            name: newAreaName,
-            emoji: newAreaEmoji,
-            isSkinRelated: newAreaIsSkin,
-            sortOrder: bodyAreas.count
-        )
-        modelContext.insert(area)
-        newAreaName = ""
-        newAreaEmoji = "🔵"
-        newAreaIsSkin = false
     }
 }
 
