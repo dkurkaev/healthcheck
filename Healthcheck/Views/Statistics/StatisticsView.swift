@@ -420,14 +420,14 @@ struct StatisticsView: View {
     private func exportData() {
         isExporting = true
         
-        DispatchQueue.global(qos: .userInitiated).async {
-            let data = ExcelExportService.generateWorkbook(
+        Task {
+            let data = await ExcelExportService.generateXLSX(
                 bodyAreas: Array(bodyAreas),
                 foodEntries: Array(foodEntries),
                 medicationEntries: Array(medicationEntries)
             )
             
-            DispatchQueue.main.async {
+            await MainActor.run {
                 isExporting = false
                 
                 guard let data = data else { return }
@@ -435,7 +435,7 @@ struct StatisticsView: View {
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm"
                 let dateString = dateFormatter.string(from: Date())
-                let fileName = "Healthcheck_\(dateString).xls"
+                let fileName = "Healthcheck_\(dateString).xlsx"
                 
                 let tempDir = FileManager.default.temporaryDirectory
                 let fileURL = tempDir.appendingPathComponent(fileName)

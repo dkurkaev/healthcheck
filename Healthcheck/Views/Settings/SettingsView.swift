@@ -825,68 +825,7 @@ struct DataManagementView: View {
 }
 
 // MARK: - Native Dictionary Views
-struct CreateFoodItemView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
-    
-    @State private var name = ""
-    @State private var emoji = "🍎"
-    @State private var dangerLevel = 1
-    @State private var isFavorite = false
-    
-    var body: some View {
-        NavigationStack {
-            Form {
-                FoodItemFields(name: $name, emoji: $emoji, dangerLevel: $dangerLevel, isFavorite: $isFavorite)
-            }
-            .navigationTitle("Новый продукт")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Создать") {
-                        saveFoodItem()
-                    }
-                    .fontWeight(.bold)
-                    .disabled(name.isEmpty)
-                }
-            }
-        }
-    }
-    
-    private func saveFoodItem() {
-        let food = FoodItem(name: name, emoji: emoji, isFavorite: isFavorite, dangerLevel: dangerLevel)
-        modelContext.insert(food)
-        try? modelContext.save()
-        dismiss()
-    }
-}
 
-struct CreateMedicationView: View {
-    @Environment(\.modelContext) private var modelContext
-    @State private var draftMedication: Medication?
-    
-    var body: some View {
-        NavigationStack {
-            Group {
-                if let medication = draftMedication {
-                    MedicationEditView(medication: medication, isNew: true)
-                } else {
-                    ProgressView()
-                }
-            }
-        }
-        .onAppear {
-            if draftMedication == nil {
-                let newMed = Medication(name: "", emoji: "💊")
-                modelContext.insert(newMed)
-                draftMedication = newMed
-            }
-        }
-    }
-}
 
 #Preview {
     SettingsView()

@@ -1,123 +1,82 @@
 import Foundation
-import SwiftData
+import XLKit
 
-/// Generates XML Spreadsheet 2003 format (.xls) with multiple sheets
-/// This format is natively supported by Excel, Numbers, and Google Sheets
 struct ExcelExportService {
     
-    static func generateWorkbook(
+    static func generateXLSX(
         bodyAreas: [BodyArea],
         foodEntries: [FoodEntry],
         medicationEntries: [MedicationEntry]
-    ) -> Data? {
-        var xml = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <?mso-application progid="Excel.Sheet"?>
-        <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
-         xmlns:o="urn:schemas-microsoft-com:office:office"
-         xmlns:x="urn:schemas-microsoft-com:office:excel"
-         xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
-         <Styles>
-          <Style ss:ID="Header">
-           <Font ss:Bold="1"/>
-          </Style>
-         </Styles>
+    ) async -> Data? {
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd HH:mm"
         
-        """
+        // 1. Create Workbook
+        let workbook = Workbook()
+        let headerFormat = CellFormat.header()
         
-        // Sheet 1: Body Area Ratings
-        xml += bodyAreaRatingsSheet(bodyAreas: bodyAreas)
-        // Sheet 2: Food History
-        xml += foodHistorySheet(foodEntries: foodEntries)
-        // Sheet 3: Medication History
-        xml += medicationHistorySheet(medicationEntries: medicationEntries)
+        // --- Sheet 1: Health State (Состояние) ---
+        let s1 = workbook.addSheet(name: "Состояние")
+        s1.setCell(row: 1, column: 1, cell: Cell.string("Дата", format: headerFormat))
+        s1.setCell(row: 1, column: 2, cell: Cell.string("Зона", format: headerFormat))
+        s1.setCell(row: 1, column: 3, cell: Cell.string("Оценка (балл)", format: headerFormat))
+        s1.setCell(row: 1, column: 4, cell: Cell.string("Заметка", format: headerFormat))
         
-        xml += "</Workbook>"
-        return xml.data(using: .utf8)
-    }
-    
-    private static func bodyAreaRatingsSheet(bodyAreas: [BodyArea]) -> String {
         let allRatings = bodyAreas
             .flatMap { area in area.ratings.map { (area: area, rating: $0) } }
             .sorted { $0.rating.timestamp > $1.rating.timestamp }
         
-        var sheet = " <Worksheet ss:Name=\"Состояние тела\"><Table>"
-        sheet += "<Row ss:StyleID=\"Header\">"
-        + "<Cell><Data ss:Type=\"String\">Дата</Data></Cell>"
-        + "<Cell><Data ss:Type=\"String\">Зона</Data></Cell>"
-        + "<Cell><Data ss:Type=\"String\">Оценка</Data></Cell>"
-        + "<Cell><Data ss:Type=\"String\">Заметка</Data></Cell>"
-        + "</Row>"
-        
-        let df = DateFormatter()
-        df.dateFormat = "yyyy-MM-dd HH:mm"
-        
-        for item in allRatings {
-            sheet += "<Row>"
-            + "<Cell><Data ss:Type=\"String\">\(df.string(from: item.rating.timestamp))</Data></Cell>"
-            + "<Cell><Data ss:Type=\"String\">\(item.area.emoji) \(escapeXML(item.area.name))</Data></Cell>"
-            + "<Cell><Data ss:Type=\"String\">\(item.rating.rating) (\(RatingLabel.text(for: item.rating.rating)))</Data></Cell>"
-            + "<Cell><Data ss:Type=\"String\">\(escapeXML(item.rating.note))</Data></Cell>"
-            + "</Row>"
+        for (i, item) in allRatings.enumerated() {
+            let row = i + 2
+            s1.setCell(row: row, column: 1, cell: Cell.string(df.string(from: item.rating.timestamp)))
+            s1.setCell(row: row, column: 2, cell: Cell.string(item.area.name))
+            s1.setCell(row: row, column: 3, cell: Cell.integer(item.rating.rating))
+            s1.setCell(row: row, column: 4, cell: Cell.string(item.rating.note))
         }
-        sheet += "</Table></Worksheet>"
-        return sheet
-    }
-    
-    private static func foodHistorySheet(foodEntries: [FoodEntry]) -> String {
-        var sheet = " <Worksheet ss:Name=\"История еды\"><Table>"
-        sheet += "<Row ss:StyleID=\"Header\">"
-        + "<Cell><Data ss:Type=\"String\">Дата</Data></Cell>"
-        + "<Cell><Data ss:Type=\"String\">Продукт</Data></Cell>"
-        + "<Cell><Data ss:Type=\"String\">Опасность</Data></Cell>"
-        + "<Cell><Data ss:Type=\"String\">Заметка</Data></Cell>"
-        + "</Row>"
         
-        let df = DateFormatter()
-        df.dateFormat = "yyyy-MM-dd HH:mm"
+        // --- Sheet 2: Food (Еда) ---
+        let s2 = workbook.addSheet(name: "Еда")
+        s2.setCell(row: 1, column: 1, cell: Cell.string("Дата", format: headerFormat))
+        s2.setCell(row: 1, column: 2, cell: Cell.string("Продукт", format: headerFormat))
+        s2.setCell(row: 1, column: 3, cell: Cell.string("Опасность", format: headerFormat))
+        s2.setCell(row: 1, column: 4, cell: Cell.string("Заметка", format: headerFormat))
         
-        for entry in foodEntries.sorted(by: { $0.timestamp > $1.timestamp }) {
-            sheet += "<Row>"
-            + "<Cell><Data ss:Type=\"String\">\(df.string(from: entry.timestamp))</Data></Cell>"
-            + "<Cell><Data ss:Type=\"String\">\(entry.foodItem?.emoji ?? "") \(escapeXML(entry.foodItem?.name ?? ""))</Data></Cell>"
-            + "<Cell><Data ss:Type=\"String\">\(entry.foodItem?.dangerLevel ?? 0)</Data></Cell>"
-            + "<Cell><Data ss:Type=\"String\">\(escapeXML(entry.note))</Data></Cell>"
-            + "</Row>"
+        let sortedFood = foodEntries.sorted(by: { $0.timestamp > $1.timestamp })
+        for (i, entry) in sortedFood.enumerated() {
+            let row = i + 2
+            s2.setCell(row: row, column: 1, cell: Cell.string(df.string(from: entry.timestamp)))
+            s2.setCell(row: row, column: 2, cell: Cell.string(entry.foodItem?.name ?? ""))
+            s2.setCell(row: row, column: 3, cell: Cell.integer(entry.foodItem?.dangerLevel ?? 0))
+            s2.setCell(row: row, column: 4, cell: Cell.string(entry.note))
         }
-        sheet += "</Table></Worksheet>"
-        return sheet
-    }
-    
-    private static func medicationHistorySheet(medicationEntries: [MedicationEntry]) -> String {
-        var sheet = " <Worksheet ss:Name=\"История лекарств\"><Table>"
-        sheet += "<Row ss:StyleID=\"Header\">"
-        + "<Cell><Data ss:Type=\"String\">Дата</Data></Cell>"
-        + "<Cell><Data ss:Type=\"String\">Лекарство</Data></Cell>"
-        + "<Cell><Data ss:Type=\"String\">Зоны</Data></Cell>"
-        + "<Cell><Data ss:Type=\"String\">Заметка</Data></Cell>"
-        + "</Row>"
         
-        let df = DateFormatter()
-        df.dateFormat = "yyyy-MM-dd HH:mm"
+        // --- Sheet 3: Medication (Лекарства) ---
+        let s3 = workbook.addSheet(name: "Лекарства")
+        s3.setCell(row: 1, column: 1, cell: Cell.string("Дата", format: headerFormat))
+        s3.setCell(row: 1, column: 2, cell: Cell.string("Лекарство", format: headerFormat))
+        s3.setCell(row: 1, column: 3, cell: Cell.string("Зоны", format: headerFormat))
+        s3.setCell(row: 1, column: 4, cell: Cell.string("Заметка", format: headerFormat))
         
-        for entry in medicationEntries.sorted(by: { $0.timestamp > $1.timestamp }) {
-            let areas = entry.bodyAreas.map { "\($0.emoji) \($0.name)" }.joined(separator: ", ")
-            sheet += "<Row>"
-            + "<Cell><Data ss:Type=\"String\">\(df.string(from: entry.timestamp))</Data></Cell>"
-            + "<Cell><Data ss:Type=\"String\">\(entry.medication?.emoji ?? "") \(escapeXML(entry.medication?.name ?? ""))</Data></Cell>"
-            + "<Cell><Data ss:Type=\"String\">\(escapeXML(areas))</Data></Cell>"
-            + "<Cell><Data ss:Type=\"String\">\(escapeXML(entry.note))</Data></Cell>"
-            + "</Row>"
+        let sortedMeds = medicationEntries.sorted(by: { $0.timestamp > $1.timestamp })
+        for (i, entry) in sortedMeds.enumerated() {
+            let row = i + 2
+            let areas = entry.bodyAreas.map { $0.name }.joined(separator: ", ")
+            s3.setCell(row: row, column: 1, cell: Cell.string(df.string(from: entry.timestamp)))
+            s3.setCell(row: row, column: 2, cell: Cell.string(entry.medication?.name ?? ""))
+            s3.setCell(row: row, column: 3, cell: Cell.string(areas))
+            s3.setCell(row: row, column: 4, cell: Cell.string(entry.note))
         }
-        sheet += "</Table></Worksheet>"
-        return sheet
-    }
-    
-    private static func escapeXML(_ str: String) -> String {
-        str.replacingOccurrences(of: "&", with: "&amp;")
-           .replacingOccurrences(of: "<", with: "&lt;")
-           .replacingOccurrences(of: ">", with: "&gt;")
-           .replacingOccurrences(of: "\"", with: "&quot;")
-           .replacingOccurrences(of: "'", with: "&apos;")
+        
+        // 2. Save to temporary file
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("Healthcheck_Export.xlsx")
+        try? FileManager.default.removeItem(at: tempURL)
+        
+        do {
+            try await workbook.save(to: tempURL)
+            return try Data(contentsOf: tempURL)
+        } catch {
+            print("XLKit save error: \(error)")
+            return nil
+        }
     }
 }

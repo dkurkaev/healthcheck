@@ -10,6 +10,7 @@
 		0361623A562A68D3AFAB5EAC /* MedicationTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B91A266B473FE4FA8BBC0382 /* MedicationTemplateView.swift */; };
 		0499E8C9C54FD41F5DCDC564 /* MedicationLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F007B90DF28D0B127A4AA2 /* MedicationLogView.swift */; };
 		05CA5CF9EA57DA99BBD32BD2 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3B0658D83D382643755BB9 /* Extensions.swift */; };
+		0AF083E26D3A7CDCF118ACB8 /* CreateMedicationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B6A2C7945BA4791770AC562 /* CreateMedicationView.swift */; };
 		12449CFD8650FE4A0C0B8109 /* MedicationTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6EDF6A7C6335A16F3B493E4 /* MedicationTemplate.swift */; };
 		18265BA620FF4AC2FA1EFDF8 /* BodyArea.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90BCBE939FA8D31DF1DA68FB /* BodyArea.swift */; };
 		1A9958ABA75C9E777EA56A33 /* BodyAreaRating.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05309A0ED5F724651CF28271 /* BodyAreaRating.swift */; };
@@ -23,7 +24,9 @@
 		6BE48B79E7A84A8E5BAB17C6 /* FoodItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A561E029D10714FD8407241 /* FoodItemRow.swift */; };
 		80670DBC029CA0D69D33A9D7 /* QuickActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74542E36C8C1FE4BA873A77E /* QuickActionButton.swift */; };
 		82694976DA904831B3B7EC15 /* DataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0DB38971F1AAB4646C8F51 /* DataSeeder.swift */; };
+		964216401CB62D81462534FC /* CreateFoodItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47667109BF720E60DBAFB00D /* CreateFoodItemView.swift */; };
 		989E9D24D36548F49DFAAC67 /* BodyAreaChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4815AB2199DC87F9A2DF9DA3 /* BodyAreaChartView.swift */; };
+		9DBAAB27021229E8320B8724 /* XLKit in Frameworks */ = {isa = PBXBuildFile; productRef = 28A75BB285AA58368C12D0B7 /* XLKit */; };
 		9E83BAC4141044257F2A4AA6 /* ApplyMedicationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3710168E92EBF3322CA844A /* ApplyMedicationView.swift */; };
 		A4FD50A6E924C5C034086DF9 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05F6EFC16279A592D859DDAD /* HomeView.swift */; };
 		A9DCCDC8D7D4A23960959EC9 /* HealthcheckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10D544019201BF4F45EC59E /* HealthcheckApp.swift */; };
@@ -37,6 +40,7 @@
 		E54F13AEEAD957A1BCF1FF1A /* CorrelationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52BC7CF398835FCDC2BC108 /* CorrelationView.swift */; };
 		E670DB1AD75E03DEE5CC93DA /* RatingHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0DDC3F6F73A1CE4158092D8 /* RatingHistoryView.swift */; };
 		E8DA207ABBC812889D63942A /* FoodItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4AC66D75D0ADC36286DC1AB /* FoodItem.swift */; };
+		F11AAED6C33AD1F5F050D35A /* AppTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F2D518638D3D7EDD42FBDA4 /* AppTextField.swift */; };
 		F6F0B44C6CE45C08FDDF2BD7 /* AddFoodView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E2FD15A12D802B8021F8846 /* AddFoodView.swift */; };
 /* End PBXBuildFile section */
 
@@ -44,11 +48,13 @@
 		01F007B90DF28D0B127A4AA2 /* MedicationLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationLogView.swift; sourceTree = "<group>"; };
 		05309A0ED5F724651CF28271 /* BodyAreaRating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAreaRating.swift; sourceTree = "<group>"; };
 		05F6EFC16279A592D859DDAD /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		0B6A2C7945BA4791770AC562 /* CreateMedicationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateMedicationView.swift; sourceTree = "<group>"; };
 		180F31E6A51A47E6AF7E23BF /* Healthcheck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Healthcheck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		29A0A1F20321A73C8A7380A4 /* StatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsView.swift; sourceTree = "<group>"; };
 		2E2FD15A12D802B8021F8846 /* AddFoodView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFoodView.swift; sourceTree = "<group>"; };
 		34638965B67EB4708217AD74 /* ExcelExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcelExportService.swift; sourceTree = "<group>"; };
 		3F2C5FE49DFF5537D5CE6B32 /* MedicationEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationEntry.swift; sourceTree = "<group>"; };
+		47667109BF720E60DBAFB00D /* CreateFoodItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFoodItemView.swift; sourceTree = "<group>"; };
 		4815AB2199DC87F9A2DF9DA3 /* BodyAreaChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAreaChartView.swift; sourceTree = "<group>"; };
 		4BBAECEB17813F735996F34D /* AddMedicationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMedicationView.swift; sourceTree = "<group>"; };
 		510D14AC12E8D4159B25F7AE /* BodyAreasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAreasView.swift; sourceTree = "<group>"; };
@@ -63,6 +69,7 @@
 		90BCBE939FA8D31DF1DA68FB /* BodyArea.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyArea.swift; sourceTree = "<group>"; };
 		95420682C4B37C23F255403E /* FoodLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLogView.swift; sourceTree = "<group>"; };
 		9D0DB38971F1AAB4646C8F51 /* DataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSeeder.swift; sourceTree = "<group>"; };
+		9F2D518638D3D7EDD42FBDA4 /* AppTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTextField.swift; sourceTree = "<group>"; };
 		B91A266B473FE4FA8BBC0382 /* MedicationTemplateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationTemplateView.swift; sourceTree = "<group>"; };
 		C3710168E92EBF3322CA844A /* ApplyMedicationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplyMedicationView.swift; sourceTree = "<group>"; };
 		C4AC66D75D0ADC36286DC1AB /* FoodItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItem.swift; sourceTree = "<group>"; };
@@ -75,16 +82,36 @@
 		F10D544019201BF4F45EC59E /* HealthcheckApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthcheckApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		C6D19F986AFF32F062F5D558 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9DBAAB27021229E8320B8724 /* XLKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
 		0C17E7E04BFC618CEE1A71C2 /* Medication */ = {
 			isa = PBXGroup;
 			children = (
 				4BBAECEB17813F735996F34D /* AddMedicationView.swift */,
 				C3710168E92EBF3322CA844A /* ApplyMedicationView.swift */,
+				0B6A2C7945BA4791770AC562 /* CreateMedicationView.swift */,
 				01F007B90DF28D0B127A4AA2 /* MedicationLogView.swift */,
 				B91A266B473FE4FA8BBC0382 /* MedicationTemplateView.swift */,
 			);
 			path = Medication;
+			sourceTree = "<group>";
+		};
+		2AD6D042CA56EB3DA8127CD9 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				9F2D518638D3D7EDD42FBDA4 /* AppTextField.swift */,
+			);
+			path = Common;
 			sourceTree = "<group>";
 		};
 		31716B88A1DFF227A0FA515E /* BodyAreas */ = {
@@ -101,6 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				31716B88A1DFF227A0FA515E /* BodyAreas */,
+				2AD6D042CA56EB3DA8127CD9 /* Common */,
 				49402D43BD79B54E35DD0650 /* Food */,
 				457122E8F822410D464D067C /* Home */,
 				0C17E7E04BFC618CEE1A71C2 /* Medication */,
@@ -133,6 +161,7 @@
 			isa = PBXGroup;
 			children = (
 				2E2FD15A12D802B8021F8846 /* AddFoodView.swift */,
+				47667109BF720E60DBAFB00D /* CreateFoodItemView.swift */,
 				5A561E029D10714FD8407241 /* FoodItemRow.swift */,
 				95420682C4B37C23F255403E /* FoodLogView.swift */,
 			);
@@ -218,6 +247,7 @@
 			buildConfigurationList = 3CBBB7135F3CD21ECE05C27B /* Build configuration list for PBXNativeTarget "Healthcheck" */;
 			buildPhases = (
 				AEC13748AB63C28AA0E05F63 /* Sources */,
+				C6D19F986AFF32F062F5D558 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -225,6 +255,7 @@
 			);
 			name = Healthcheck;
 			packageProductDependencies = (
+				28A75BB285AA58368C12D0B7 /* XLKit */,
 			);
 			productName = Healthcheck;
 			productReference = 180F31E6A51A47E6AF7E23BF /* Healthcheck.app */;
@@ -253,6 +284,9 @@
 			);
 			mainGroup = 9D1AA3BFBDBDB1F602A14164;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BA81079C9293CC9D23434D08 /* XCRemoteSwiftPackageReference "XLKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A36648D7347988AD05290A0B /* Products */;
 			projectDirPath = "";
@@ -270,6 +304,7 @@
 			files = (
 				F6F0B44C6CE45C08FDDF2BD7 /* AddFoodView.swift in Sources */,
 				AF6EB6EA90AE489780B5D36F /* AddMedicationView.swift in Sources */,
+				F11AAED6C33AD1F5F050D35A /* AppTextField.swift in Sources */,
 				9E83BAC4141044257F2A4AA6 /* ApplyMedicationView.swift in Sources */,
 				18265BA620FF4AC2FA1EFDF8 /* BodyArea.swift in Sources */,
 				989E9D24D36548F49DFAAC67 /* BodyAreaChartView.swift in Sources */,
@@ -278,6 +313,8 @@
 				CD22A218C8283F0A1945BC83 /* BodyAreasView.swift in Sources */,
 				6918D19E5EFF49585A1C89EF /* ContentView.swift in Sources */,
 				E54F13AEEAD957A1BCF1FF1A /* CorrelationView.swift in Sources */,
+				964216401CB62D81462534FC /* CreateFoodItemView.swift in Sources */,
+				0AF083E26D3A7CDCF118ACB8 /* CreateMedicationView.swift in Sources */,
 				82694976DA904831B3B7EC15 /* DataSeeder.swift in Sources */,
 				D24F61294F107143257BE393 /* ExcelExportService.swift in Sources */,
 				05CA5CF9EA57DA99BBD32BD2 /* Extensions.swift in Sources */,
@@ -502,6 +539,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BA81079C9293CC9D23434D08 /* XCRemoteSwiftPackageReference "XLKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/TheAcharya/XLKit.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		28A75BB285AA58368C12D0B7 /* XLKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BA81079C9293CC9D23434D08 /* XCRemoteSwiftPackageReference "XLKit" */;
+			productName = XLKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E049248AB54BFE96B59D5EDE /* Project object */;
 }
