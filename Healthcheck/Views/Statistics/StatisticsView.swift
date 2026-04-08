@@ -14,9 +14,11 @@ struct StatisticsView: View {
     @Query(sort: \MedicationEntry.timestamp, order: .reverse)
     private var medicationEntries: [MedicationEntry]
     
+    @Query(sort: \BodyAreaRating.timestamp)
+    private var allRatings: [BodyAreaRating]
+    
     @State private var selectedPeriod: TimePeriod = .month
     @State private var selectedBodyArea: BodyArea?
-    @State private var showCorrelation = false
     @State private var showExportSheet = false
     @State private var exportFileURL: URL?
     @State private var isExporting = false
@@ -41,7 +43,6 @@ struct StatisticsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Period Selector
                     Picker("Период", selection: $selectedPeriod) {
                         ForEach(TimePeriod.allCases, id: \.self) { period in
                             Text(period.rawValue).tag(period)
@@ -50,30 +51,18 @@ struct StatisticsView: View {
                     .pickerStyle(.segmented)
                     .padding(.horizontal)
                     
-                    // Overview Card
                     overviewCard
                     
-                    // All Body Areas Chart
-                    allAreasChart
+                    areaTrendChart
                     
-                    // Individual Area Selector
-                    bodyAreaSelector
-                    
-                    // Selected Area Detail Chart
-                    if let area = selectedBodyArea {
-                        selectedAreaChart(area: area)
-                    }
-                    
-                    // Rating History
                     ratingHistoryLink
-                    
-                    // Correlation Section
-                    correlationSection
-                    
-                    // Export Section
-                    exportSection
                 }
                 .padding(.vertical)
+            }
+            .onAppear {
+                if selectedBodyArea == nil && !bodyAreas.isEmpty {
+                    selectedBodyArea = bodyAreas.first
+                }
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Статистика")
@@ -128,222 +117,148 @@ struct StatisticsView: View {
         bodyAreas.flatMap { $0.ratings.filter { $0.timestamp >= date } }.count
     }
     
-    // MARK: - All Areas Chart
-    private var allAreasChart: some View {
+    // MARK: - Area Trend Chart
+    private var areaTrendChart: some View {
         let cutoff = Date().daysAgo(selectedPeriod.days)
         
         return VStack(alignment: .leading, spacing: 12) {
-            Text("Динамика всех зон")
-                .font(.headline)
-                .padding(.horizontal)
-            
-            let chartData = bodyAreas.flatMap { area in
-                area.ratings
-                    .filter { $0.timestamp >= cutoff }
-                    .sorted { $0.timestamp < $1.timestamp }
-                    .map { rating in
-                        ChartDataPoint(
-                            date: rating.timestamp,
-                            value: Double(rating.rating),
-                            category: area.name
-                        )
-                    }
-            }
-            
-            if chartData.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.secondary)
-                    Text("Нет данных за выбранный период")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 200)
-            } else {
-                Chart(chartData, id: \.id) { point in
-                    LineMark(
-                        x: .value("Дата", point.date),
-                        y: .value("Оценка", point.value)
-                    )
-                    .foregroundStyle(by: .value("Зона", point.category))
-                    .interpolationMethod(.catmullRom)
-                }
-                .chartYScale(domain: 1...5)
-                .chartYAxis {
-                    AxisMarks(values: [1, 2, 3, 4, 5]) { value in
-                        AxisValueLabel {
-                            if let intValue = value.as(Int.self) {
-                                Text(RatingLabel.emoji(for: intValue))
-                                    .font(.caption2)
-                            }
-                        }
-                        AxisGridLine()
-                    }
-                }
-                .chartLegend(.visible)
-                .frame(height: 250)
-                .padding(.horizontal)
-            }
-        }
-        .padding(.vertical)
-        .cardStyle()
-        .padding(.horizontal)
-    }
-    
-    // MARK: - Body Area Selector
-    private var bodyAreaSelector: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Детальный анализ")
-                .font(.headline)
-                .padding(.horizontal)
-            
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            // Header copied EXACTLY from HomeView
+            Menu {
                 ForEach(bodyAreas) { area in
-                    LargeSelectableTile(
-                        emoji: area.emoji,
-                        title: area.name,
-                        isSelected: selectedBodyArea?.id == area.id,
-                        accentColor: .blue,
-                        action: {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                selectedBodyArea = selectedBodyArea?.id == area.id ? nil : area
+                    Button(action: {
+                        var transaction = Transaction()
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) {
+                            selectedBodyArea = area
+                        }
+                    }) {
+                        Label(area.name, systemImage: area.emoji)
+                    }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Text(selectedBodyArea?.name ?? "Выберите зону")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.primary)
+                    
+                    Image(systemName: "chevron.down.circle.fill")
+                        .font(.body)
+                        .foregroundStyle(.blue)
+                    
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, .appHorizontalPadding)
+            
+            // The Chart Card
+            VStack(alignment: .leading, spacing: 12) {
+                if let area = selectedBodyArea {
+                    let ratings = allRatings.filter { r in
+                        r.bodyArea?.id == area.id && r.timestamp >= cutoff
+                    }
+                    .sorted { $0.timestamp < $1.timestamp }
+                    
+                    if ratings.isEmpty {
+                        VStack(spacing: 12) {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .font(.largeTitle)
+                                .foregroundStyle(.tertiary)
+                            Text("Нет данных за этот период")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 200)
+                    } else {
+                        Chart {
+                            ForEach(ratings) { rating in
+                                LineMark(
+                                    x: .value("Дата", rating.timestamp),
+                                    y: .value("Оценка", rating.rating)
+                                )
+                                .interpolationMethod(.catmullRom)
+                                .foregroundStyle(Color.ratingColor(rating.rating))
+                                
+                                AreaMark(
+                                    x: .value("Дата", rating.timestamp),
+                                    y: .value("Оценка", rating.rating)
+                                )
+                                .interpolationMethod(.catmullRom)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            Color.ratingColor(rating.rating).opacity(0.15),
+                                            Color.ratingColor(rating.rating).opacity(0)
+                                        ]),
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                            }
+                            
+                            let periodFood = foodEntries.filter { $0.timestamp >= cutoff }
+                            ForEach(periodFood) { food in
+                                RuleMark(x: .value("Еда", food.timestamp))
+                                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                                    .foregroundStyle(.foodRed.opacity(0.4))
+                                    .annotation(position: .top) {
+                                        Text(food.foodItem?.emoji ?? "🍽")
+                                            .font(.caption2)
+                                    }
+                            }
+                            
+                            let periodMeds = medicationEntries.filter { entry in
+                                entry.timestamp >= cutoff && entry.bodyAreas.contains(where: { $0.id == area.id })
+                            }
+                            ForEach(periodMeds) { med in
+                                RuleMark(x: .value("Лекарство", med.timestamp))
+                                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                                    .foregroundStyle(.medicationBlue.opacity(0.4))
+                                    .annotation(position: .bottom) {
+                                        Text(med.medication?.emoji ?? "💊")
+                                            .font(.caption2)
+                                    }
                             }
                         }
-                    )
-                }
-            }
-            .padding(.horizontal)
-        }
-    }
-    
-    // MARK: - Selected Area Chart
-    private func selectedAreaChart(area: BodyArea) -> some View {
-        let cutoff = Date().daysAgo(selectedPeriod.days)
-        let ratings = area.ratings
-            .filter { $0.timestamp >= cutoff }
-            .sorted { $0.timestamp < $1.timestamp }
-        
-        // Related food entries
-        let foodInPeriod = foodEntries.filter { $0.timestamp >= cutoff }
-        
-        // Related medication entries
-        let medsForArea = medicationEntries.filter { entry in
-            entry.timestamp >= cutoff && entry.bodyAreas.contains(where: { $0.id == area.id })
-        }
-        
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(area.emoji)
-                    .font(.title2)
-                Text(area.name)
-                    .font(.headline)
-            }
-            
-            if ratings.isEmpty {
-                Text("Нет данных за выбранный период")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-            } else {
-                Chart {
-                    ForEach(ratings) { rating in
-                        LineMark(
-                            x: .value("Дата", rating.timestamp),
-                            y: .value("Оценка", rating.rating)
-                        )
-                        .interpolationMethod(.catmullRom)
-                        .foregroundStyle(.blue)
-                        
-                        PointMark(
-                            x: .value("Дата", rating.timestamp),
-                            y: .value("Оценка", rating.rating)
-                        )
-                        .foregroundStyle(Color.ratingColor(rating.rating))
-                        .symbolSize(50)
-                    }
-                    
-                    // Food markers
-                    ForEach(foodInPeriod) { entry in
-                        RuleMark(x: .value("Дата", entry.timestamp))
-                            .foregroundStyle(.foodRed.opacity(0.3))
-                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
-                            .annotation(position: .top) {
-                                Text(entry.foodItem?.emoji ?? "🍽")
-                                    .font(.caption2)
+                        .frame(height: 240)
+                        .chartYScale(domain: 1...5)
+                        .chartYAxis {
+                            AxisMarks(values: [1, 2, 3, 4, 5]) { value in
+                                AxisValueLabel {
+                                    if let intValue = value.as(Int.self) {
+                                        Text(RatingLabel.emoji(for: intValue))
+                                    }
+                                }
+                                AxisGridLine()
                             }
-                    }
-                    
-                    // Medication markers for this area
-                    ForEach(medsForArea) { entry in
-                        RuleMark(x: .value("Дата", entry.timestamp))
-                            .foregroundStyle(.medicationBlue.opacity(0.3))
-                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
-                            .annotation(position: .bottom) {
-                                Text(entry.medication?.emoji ?? "💊")
-                                    .font(.caption2)
-                            }
+                        }
+                        .chartXAxis {
+                            AxisMarks(values: .stride(by: selectedPeriod == .week ? .day : .weekOfYear))
+                        }
                     }
                 }
-                .chartYScale(domain: 1...5)
-                .frame(height: 220)
-            }
-            
-            // Legend
-            HStack(spacing: 16) {
-                HStack(spacing: 4) {
-                    Circle().fill(.foodRed).frame(width: 8, height: 8)
-                    Text("Еда")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                HStack(spacing: 4) {
-                    Circle().fill(.medicationBlue).frame(width: 8, height: 8)
-                    Text("Лекарства")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .padding()
-        .cardStyle()
-        .padding(.horizontal)
-        .transition(.move(edge: .bottom).combined(with: .opacity))
-    }
-    
-    // MARK: - Correlation Section
-    private var correlationSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Корреляции")
-                .font(.headline)
-                .padding(.horizontal)
-            
-            NavigationLink(destination: CorrelationView()) {
-                HStack {
-                    Image(systemName: "chart.bar.xaxis.ascending")
-                        .font(.title2)
-                        .foregroundStyle(.blue)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Анализ влияния")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                        Text("Как еда и лекарства влияют на здоровье")
+                
+                HStack(spacing: 20) {
+                    HStack(spacing: 4) {
+                        Circle().fill(.foodRed.opacity(0.4)).frame(width: 8, height: 8)
+                        Text("Еда")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.tertiary)
+                    HStack(spacing: 4) {
+                        Circle().fill(.medicationBlue.opacity(0.4)).frame(width: 8, height: 8)
+                        Text("Лекарства")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                .padding()
-                .cardStyle()
+                .padding(.horizontal)
             }
-            .buttonStyle(.plain)
+            .padding(.vertical)
+            .cardStyle()
             .padding(.horizontal)
         }
     }
@@ -383,53 +298,13 @@ struct StatisticsView: View {
         }
     }
     
-    // MARK: - Export Section
-    private var exportSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Экспорт")
-                .font(.headline)
-                .padding(.horizontal)
-            
-            Button(action: { exportData() }) {
-                HStack {
-                    Image(systemName: "doc.richtext")
-                        .font(.title2)
-                        .foregroundStyle(.green)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Экспорт в Excel")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                        Text("Выгрузить все данные в формате .xls")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    if isExporting {
-                        ProgressView()
-                    } else {
-                        Image(systemName: "square.and.arrow.up")
-                            .foregroundStyle(.blue)
-                    }
-                }
-                .padding()
-                .cardStyle()
-            }
-            .buttonStyle(.plain)
-            .disabled(isExporting)
-            .padding(.horizontal)
-        }
-    }
-    
     // MARK: - Export Data
     private func exportData() {
         isExporting = true
         
         DispatchQueue.global(qos: .userInitiated).async {
             let data = ExcelExportService.generateWorkbook(
-                bodyAreas: bodyAreas,
+                bodyAreas: Array(bodyAreas),
                 foodEntries: Array(foodEntries),
                 medicationEntries: Array(medicationEntries)
             )
@@ -508,13 +383,4 @@ struct ChartDataPoint: Identifiable {
     let date: Date
     let value: Double
     let category: String
-}
-
-#Preview {
-    StatisticsView()
-        .modelContainer(for: [
-            BodyArea.self, BodyAreaRating.self,
-            FoodItem.self, FoodEntry.self,
-            Medication.self, MedicationTemplate.self, MedicationEntry.self
-        ], inMemory: true)
 }
