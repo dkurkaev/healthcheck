@@ -118,6 +118,7 @@ struct StatisticsView: View {
         let startOfToday = calendar.startOfDay(for: now)
         let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday)!.addingTimeInterval(-1)
         
+        let cutoffDay: Date = startOfToday
         let cutoff: Date = {
             switch selectedPeriod {
             case .day: return startOfToday
@@ -182,22 +183,40 @@ struct StatisticsView: View {
                 let ratingsForChart: [ChartPoint] = prepareChartData(for: selectedBodyArea, since: cutoff)
                 
                 // Header with dynamic values
-                HStack(alignment: .lastTextBaseline, spacing: 8) {
-                    if let selectedDate, 
-                       let point = ratingsForChart.min(by: { abs($0.date.timeIntervalSince(selectedDate)) < abs($1.date.timeIntervalSince(selectedDate)) }) {
-                        Text(String(format: "%.1f", point.value))
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                        Text(point.date.timeString)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    } else if let last = ratingsForChart.last {
-                        Text(String(format: "%.1f", last.value))
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                        Text("Сейчас")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                HStack(alignment: .center, spacing: 8) {
+                    HStack(alignment: .lastTextBaseline, spacing: 8) {
+                        if let selectedDate, 
+                           let point = ratingsForChart.min(by: { abs($0.date.timeIntervalSince(selectedDate)) < abs($1.date.timeIntervalSince(selectedDate)) }) {
+                            Text(String(format: "%.1f", point.value))
+                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                            Text(point.date.timeString)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        } else if let last = ratingsForChart.last {
+                            Text(String(format: "%.1f", last.value))
+                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                            Text("Сейчас")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
+                    
                     Spacer()
+                    
+                    // Event info on the right
+                    if let selectedDate, let event = findClosestEvent(to: selectedDate) {
+                        HStack(spacing: 4) {
+                            Text(event.emoji)
+                            Text(event.name)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.secondary.opacity(0.1))
+                        .clipShape(Capsule())
+                    }
                 }
                 .padding(.horizontal)
                 .frame(height: 48)
@@ -260,16 +279,17 @@ struct StatisticsView: View {
                                     .foregroundStyle(.foodRed.opacity(0.4))
                             }
                             
-                            if let area = selectedBodyArea {
-                                let currentAreaName = area.name
-                                let dayMeds = medicationEntries.filter { med in
-                                    med.timestamp >= startOfToday && med.timestamp <= endOfToday && med.bodyAreas.contains { $0.name == currentAreaName }
+                            let dayMeds = medicationEntries.filter { med in
+                                guard med.timestamp >= startOfToday && med.timestamp <= endOfToday else { return false }
+                                if let area = selectedBodyArea {
+                                    return med.bodyAreas.contains { $0.name == area.name }
                                 }
-                                ForEach(dayMeds) { med in
-                                    RuleMark(x: .value("Дата", med.timestamp))
-                                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                                        .foregroundStyle(.medicationBlue.opacity(0.4))
-                                }
+                                return true // Show overall meds
+                            }
+                            ForEach(dayMeds) { med in
+                                RuleMark(x: .value("Дата", med.timestamp))
+                                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                                    .foregroundStyle(.medicationBlue.opacity(0.4))
                             }
                         }
                     }
@@ -310,21 +330,20 @@ struct StatisticsView: View {
         let ratings: [BodyAreaRating]
         if let area = area {
             ratings = allRatings.filter { r in
-                r.bodyArea?.name == area.name && r.timestamp >= date
+                r.bodyArea?.name == area.name && r.timestamp >= date && r.rating > 0
             }
         } else {
-            ratings = allRatings.filter { $0.timestamp >= date }
+            ratings = allRatings.filter { $0.timestamp >= date && $0.rating > 0 }
         }
         
         if selectedPeriod == .day {
             if area != nil {
-                return ratings.filter { $0.rating > 0 }.map { ChartPoint(date: $0.timestamp, value: Double($0.rating)) }
+                return ratings.map { ChartPoint(date: $0.timestamp, value: Double($0.rating)) }
                     .sorted { $0.date < $1.date }
             } else {
-                // Round timestamp to nearest 5 mins to group simultaneous ratings across areas
-                let grouped = Dictionary(grouping: ratings.filter { $0.rating > 0 }) { rating in
-                    let interval: TimeInterval = 300 // 5 minutes
-                    return Date(timeIntervalSince1970: floor(rating.timestamp.timeIntervalSince1970 / interval) * interval)
+                let interval: TimeInterval = 300 // 5 minutes grouping
+                let grouped = Dictionary(grouping: ratings) { rating in
+                    Date(timeIntervalSince1970: floor(rating.timestamp.timeIntervalSince1970 / interval) * interval)
                 }
                 return grouped.map { (date, ratings) in
                     let avg = Double(ratings.map(\.rating).reduce(0, +)) / Double(ratings.count)
@@ -333,7 +352,7 @@ struct StatisticsView: View {
                 .sorted { $0.date < $1.date }
             }
         } else {
-            let grouped = Dictionary(grouping: ratings.filter { $0.rating > 0 }) { 
+            let grouped = Dictionary(grouping: ratings) { 
                 Calendar.current.startOfDay(for: $0.timestamp)
             }
             return grouped.map { (date, ratings) in
@@ -342,6 +361,24 @@ struct StatisticsView: View {
             }
             .sorted { $0.date < $1.date }
         }
+    }
+    
+    private func findClosestEvent(to date: Date) -> (emoji: String, name: String)? {
+        let threshold: TimeInterval = 600 // 10 minutes
+        
+        let food = foodEntries.first { abs($0.timestamp.timeIntervalSince(date)) < threshold }
+        if let food { return (food.foodItem?.emoji ?? "🍽", food.foodItem?.name ?? "Еда") }
+        
+        let med = medicationEntries.first { med in
+            guard abs(med.timestamp.timeIntervalSince(date)) < threshold else { return false }
+            if let area = selectedBodyArea {
+                return med.bodyAreas.contains { $0.name == area.name }
+            }
+            return true
+        }
+        if let med { return (med.medication?.emoji ?? "💊", med.medication?.name ?? "Лекарство") }
+        
+        return nil
     }
     
     // MARK: - Rating History Link
