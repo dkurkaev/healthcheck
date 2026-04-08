@@ -2,43 +2,52 @@ import SwiftUI
 import SwiftData
 
 struct SettingsView: View {
+    @AppStorage("notificationsEnabled") private var notificationsEnabled = false
     @AppStorage("notificationFrequency") private var notificationFrequency = 1
-    @AppStorage("hasRequestedNotifications") private var hasRequestedNotifications = false
+    @AppStorage("notificationTime1") private var notificationTime1: Double = 72000 // 20:00 default
+    @AppStorage("notificationTime2") private var notificationTime2: Double = 32400 // 09:00 default
+    @AppStorage("notificationTime3") private var notificationTime3: Double = 54000 // 15:00 default
     
     var body: some View {
         NavigationStack {
             List {
                 // Notifications Section
                 Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Частота напоминаний")
-                            .font(.subheadline)
-                        
+                    Toggle("Напоминания", isOn: $notificationsEnabled)
+                        .onChange(of: notificationsEnabled) { _, newValue in
+                            if newValue {
+                                NotificationService.shared.requestPermission()
+                                rescheduleNotifications()
+                            } else {
+                                NotificationService.shared.cancelAll()
+                            }
+                        }
+                    
+                    if notificationsEnabled {
                         Picker("Частота", selection: $notificationFrequency) {
-                            Text("1 раз в день (вечер)").tag(1)
+                            Text("1 раз в день").tag(1)
                             Text("2 раза в день").tag(2)
                             Text("3 раза в день").tag(3)
                         }
-                        .pickerStyle(.menu)
-                        .onChange(of: notificationFrequency) { _, newValue in
-                            NotificationService.shared.scheduleHealthRating(timesPerDay: newValue)
+                        .onChange(of: notificationFrequency) { _, _ in rescheduleNotifications() }
+                        
+                        DatePicker("Время 1", selection: timeBinding(for: $notificationTime1), displayedComponents: .hourAndMinute)
+                            .onChange(of: notificationTime1) { _, _ in rescheduleNotifications() }
+                        
+                        if notificationFrequency >= 2 {
+                            DatePicker("Время 2", selection: timeBinding(for: $notificationTime2), displayedComponents: .hourAndMinute)
+                                .onChange(of: notificationTime2) { _, _ in rescheduleNotifications() }
                         }
-                    }
-                    
-                    if !hasRequestedNotifications {
-                        Button(action: {
-                            NotificationService.shared.requestPermission()
-                            hasRequestedNotifications = true
-                            NotificationService.shared.scheduleHealthRating(timesPerDay: notificationFrequency)
-                        }) {
-                            Label("Включить уведомления", systemImage: "bell.badge.fill")
-                                .foregroundStyle(.blue)
+                        
+                        if notificationFrequency >= 3 {
+                            DatePicker("Время 3", selection: timeBinding(for: $notificationTime3), displayedComponents: .hourAndMinute)
+                                .onChange(of: notificationTime3) { _, _ in rescheduleNotifications() }
                         }
                     }
                 } header: {
                     Text("Уведомления")
                 } footer: {
-                    Text("Приложение будет напоминать вам оценить состояние здоровья")
+                    Text(notificationsEnabled ? "Приложение будет напоминать вам оценить состояние здоровья в выбранное время" : "Напоминания отключены")
                 }
                 
                 // Medications Section
@@ -84,6 +93,44 @@ struct SettingsView: View {
             }
             .navigationTitle("Настройки")
         }
+    }
+    
+    // MARK: - Notification Helpers
+    private func timeBinding(for storage: Binding<Double>) -> Binding<Date> {
+        Binding(
+            get: {
+                let calendar = Calendar.current
+                var components = calendar.dateComponents([.hour, .minute], from: Date())
+                components.hour = Int(storage.wrappedValue) / 3600
+                components.minute = (Int(storage.wrappedValue) % 3600) / 60
+                return calendar.date(from: components) ?? Date()
+            },
+            set: {
+                let components = Calendar.current.dateComponents([.hour, .minute], from: $0)
+                storage.wrappedValue = Double((components.hour ?? 0) * 3600 + (components.minute ?? 0) * 60)
+            }
+        )
+    }
+    
+    private func rescheduleNotifications() {
+        guard notificationsEnabled else { return }
+        
+        var times: [(hour: Int, minute: Int)] = []
+        
+        // Time 1
+        times.append((hour: Int(notificationTime1) / 3600, minute: (Int(notificationTime1) % 3600) / 60))
+        
+        // Time 2
+        if notificationFrequency >= 2 {
+            times.append((hour: Int(notificationTime2) / 3600, minute: (Int(notificationTime2) % 3600) / 60))
+        }
+        
+        // Time 3
+        if notificationFrequency >= 3 {
+            times.append((hour: Int(notificationTime3) / 3600, minute: (Int(notificationTime3) % 3600) / 60))
+        }
+        
+        NotificationService.shared.scheduleHealthRating(at: times)
     }
 }
 

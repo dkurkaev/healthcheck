@@ -17,35 +17,23 @@ class NotificationService {
         }
     }
     
-    func scheduleHealthRating(timesPerDay: Int) {
+    func scheduleHealthRating(at times: [(hour: Int, minute: Int)]) {
         // Remove existing notifications
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         
-        let hours: [Int]
-        switch timesPerDay {
-        case 1:
-            hours = [20] // Evening
-        case 2:
-            hours = [12, 20] // Noon and Evening
-        case 3:
-            hours = [9, 15, 21] // Morning, Afternoon, Evening
-        default:
-            hours = [20]
-        }
-        
-        for hour in hours {
+        for (index, time) in times.enumerated() {
             let content = UNMutableNotificationContent()
             content.title = "Время оценить здоровье 🏥"
             content.body = "Оцените состояние ваших зон тела"
             content.sound = .default
             
             var dateComponents = DateComponents()
-            dateComponents.hour = hour
-            dateComponents.minute = 0
+            dateComponents.hour = time.hour
+            dateComponents.minute = time.minute
             
             let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
             let request = UNNotificationRequest(
-                identifier: "healthRating_\(hour)",
+                identifier: "healthRating_\(index)",
                 content: content,
                 trigger: trigger
             )
