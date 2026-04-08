@@ -171,6 +171,7 @@ struct MedicationEditView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Bindable var medication: Medication
+    var isNew: Bool = false
     
     @Query(sort: \BodyArea.sortOrder)
     private var bodyAreas: [BodyArea]
@@ -178,21 +179,23 @@ struct MedicationEditView: View {
     @State private var showAddTemplate = false
     @State private var newTemplateName = ""
     @State private var selectedBodyAreas: Set<UUID> = []
-    @State private var showDeleteConfirmation = false
     @State private var editName: String = ""
     @State private var editEmoji: String = ""
+    @State private var isDiscarding = false
     
     var body: some View {
         List {
             // Information Section
             MedicationFields(name: $editName, emoji: $editEmoji)
             
-            Section {
-                HStack {
-                    Text("Применений")
-                    Spacer()
-                    Text("\(medication.entries.count)")
-                        .foregroundStyle(.secondary)
+            if !isNew {
+                Section {
+                    HStack {
+                        Text("Применений")
+                        Spacer()
+                        Text("\(medication.entries.count)")
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             
@@ -238,19 +241,46 @@ struct MedicationEditView: View {
                 Text("Шаблоны связывают лекарство с зонами тела для быстрого применения")
             }
         }
-        .navigationTitle(medication.name)
+        .navigationTitle(isNew ? "Новое лекарство" : medication.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if isNew {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Отмена") {
+                        isDiscarding = true
+                        modelContext.delete(medication)
+                        try? modelContext.save()
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Создать") {
+                        saveAndClose()
+                    }
+                    .fontWeight(.bold)
+                    .disabled(editName.isEmpty)
+                }
+            }
+        }
         .onAppear {
             editName = medication.name
             editEmoji = medication.emoji
         }
         .onDisappear {
-            if !editName.isEmpty { medication.name = editName }
-            if !editEmoji.isEmpty { medication.emoji = editEmoji }
-            try? modelContext.save()
+            if !isDiscarding {
+                saveAndClose()
+            }
         }
         .sheet(isPresented: $showAddTemplate) {
             addTemplateSheet
         }
+    }
+    
+    private func saveAndClose() {
+        if !editName.isEmpty { medication.name = editName }
+        if !editEmoji.isEmpty { medication.emoji = editEmoji }
+        try? modelContext.save()
+        if isNew { dismiss() }
     }
     
     // MARK: - Add Template Sheet
@@ -263,8 +293,7 @@ struct MedicationEditView: View {
                         Text("Название шаблона")
                             .font(.headline)
                         
-                        TextField("Например: На всю кожу", text: $newTemplateName)
-                            .textFieldStyle(.roundedBorder)
+                        AppTextField(title: "Например: На всю кожу", text: $newTemplateName, icon: "text.quote")
                     }
                     .padding()
                     .background(.ultraThinMaterial)
@@ -837,38 +866,25 @@ struct CreateFoodItemView: View {
 
 struct CreateMedicationView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
-    
-    @State private var name = ""
-    @State private var emoji = "💊"
+    @State private var draftMedication: Medication?
     
     var body: some View {
         NavigationStack {
-            Form {
-                MedicationFields(name: $name, emoji: $emoji)
-            }
-            .navigationTitle("Создать лекарство")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Создать") {
-                        saveMedication()
-                    }
-                    .fontWeight(.bold)
-                    .disabled(name.isEmpty)
+            Group {
+                if let medication = draftMedication {
+                    MedicationEditView(medication: medication, isNew: true)
+                } else {
+                    ProgressView()
                 }
             }
         }
-    }
-    
-    private func saveMedication() {
-        let medication = Medication(name: name, emoji: emoji)
-        modelContext.insert(medication)
-        try? modelContext.save()
-        dismiss()
+        .onAppear {
+            if draftMedication == nil {
+                let newMed = Medication(name: "", emoji: "💊")
+                modelContext.insert(newMed)
+                draftMedication = newMed
+            }
+        }
     }
 }
 
