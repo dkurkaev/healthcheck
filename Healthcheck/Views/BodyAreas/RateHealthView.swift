@@ -48,7 +48,10 @@ struct RateHealthView: View {
                     }
                 }
                 .padding()
+                .contentShape(Rectangle())
+                .dismissKeyboardOnTap()
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Оценка здоровья")
             .navigationBarTitleDisplayMode(.inline)
@@ -183,8 +186,7 @@ struct RatingCard: View {
             .buttonStyle(.plain)
             
             if showNote {
-                TextField("Заметка...", text: $note)
-                    .textFieldStyle(.roundedBorder)
+                AppTextField(title: "Заметка...", text: $note, icon: "text.quote")
                     .font(.subheadline)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }

@@ -161,7 +161,7 @@ struct MedicationManagementView: View {
             }
         }
         .sheet(isPresented: $showAddMedication) {
-            AddMedicationView()
+            CreateMedicationView()
         }
     }
 }
@@ -184,23 +184,10 @@ struct MedicationEditView: View {
     
     var body: some View {
         List {
-            // Editable Info Section
-            Section("Информация") {
-                HStack {
-                    Text("Эмоджи")
-                    Spacer()
-                    TextField("💊", text: $editEmoji)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 60)
-                }
-                
-                HStack {
-                    Text("Название")
-                    Spacer()
-                    TextField("Название", text: $editName)
-                        .multilineTextAlignment(.trailing)
-                }
-                
+            // Information Section
+            MedicationFields(name: $editName, emoji: $editEmoji)
+            
+            Section {
                 HStack {
                     Text("Применений")
                     Spacer()
@@ -508,7 +495,7 @@ struct FoodManagementView: View {
             }
         }
         .sheet(isPresented: $showAddFood) {
-            AddFoodView()
+            CreateFoodItemView()
         }
     }
 }
@@ -527,53 +514,7 @@ struct FoodEditView: View {
     
     var body: some View {
         List {
-            Section("Информация") {
-                HStack {
-                    Text("Эмоджи")
-                    Spacer()
-                    TextField("🍎", text: $editEmoji)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 60)
-                }
-                
-                HStack {
-                    Text("Название")
-                    Spacer()
-                    TextField("Название", text: $editName)
-                        .multilineTextAlignment(.trailing)
-                }
-                
-                Toggle("Избранное", isOn: $editIsFavorite)
-            }
-            
-            Section("Уровень опасности") {
-                Picker("Опасность", selection: $editDangerLevel) {
-                    ForEach(1...5, id: \.self) { level in
-                        HStack {
-                            Text(DangerLabel.text(for: level))
-                        }
-                        .tag(level)
-                    }
-                }
-                .pickerStyle(.menu)
-                
-                HStack {
-                    ForEach(1...5, id: \.self) { level in
-                        Button(action: { editDangerLevel = level }) {
-                            Text("\(level)")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(editDangerLevel == level ? Color.dangerColor(level) : Color(.tertiarySystemBackground))
-                                )
-                                .foregroundStyle(editDangerLevel == level ? .white : .primary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
+            FoodItemFields(name: $editName, emoji: $editEmoji, dangerLevel: $editDangerLevel, isFavorite: $editIsFavorite)
             
             Section {
                 HStack {
@@ -685,30 +626,56 @@ struct BodyAreaManagementView: View {
                 }
             }
         }
-        .alert("Новая зона тела", isPresented: $showAddArea) {
-            TextField("Название", text: $newAreaName)
-            TextField("Эмоджи", text: $newAreaEmoji)
-            
-            Button("Добавить") {
-                guard !newAreaName.isEmpty else { return }
-                let area = BodyArea(
-                    name: newAreaName,
-                    emoji: newAreaEmoji,
-                    isSkinRelated: newAreaIsSkin,
-                    sortOrder: bodyAreas.count
-                )
-                modelContext.insert(area)
-                try? modelContext.save()
-                newAreaName = ""
-                newAreaEmoji = "🔵"
-                newAreaIsSkin = false
+        .sheet(isPresented: $showAddArea) {
+            CreateBodyAreaView()
+        }
+    }
+}
+
+// MARK: - Body Area Creation View
+struct CreateBodyAreaView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    
+    @Query(sort: \BodyArea.sortOrder)
+    private var bodyAreas: [BodyArea]
+    
+    @State private var name = ""
+    @State private var emoji = "🔵"
+    @State private var isSkinRelated = false
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                BodyAreaFields(name: $name, emoji: $emoji, isSkinRelated: $isSkinRelated)
             }
-            Button("Отмена", role: .cancel) {
-                newAreaName = ""
-                newAreaEmoji = "🔵"
-                newAreaIsSkin = false
+            .navigationTitle("Новая зона тела")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Отмена") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Создать") {
+                        saveArea()
+                    }
+                    .fontWeight(.bold)
+                    .disabled(name.isEmpty)
+                }
             }
         }
+    }
+    
+    private func saveArea() {
+        let area = BodyArea(
+            name: name,
+            emoji: emoji,
+            isSkinRelated: isSkinRelated,
+            sortOrder: bodyAreas.count
+        )
+        modelContext.insert(area)
+        try? modelContext.save()
+        dismiss()
     }
 }
 
@@ -725,24 +692,7 @@ struct BodyAreaEditView: View {
     
     var body: some View {
         List {
-            Section("Информация") {
-                HStack {
-                    Text("Эмоджи")
-                    Spacer()
-                    TextField("🔵", text: $editEmoji)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 60)
-                }
-                
-                HStack {
-                    Text("Название")
-                    Spacer()
-                    TextField("Название", text: $editName)
-                        .multilineTextAlignment(.trailing)
-                }
-                
-                Toggle("Связана с кожей", isOn: $editIsSkin)
-            }
+            BodyAreaFields(name: $editName, emoji: $editEmoji, isSkinRelated: $editIsSkin)
             
             Section {
                 HStack {
@@ -845,6 +795,83 @@ struct DataManagementView: View {
     }
 }
 
+// MARK: - Native Dictionary Views
+struct CreateFoodItemView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var name = ""
+    @State private var emoji = "🍎"
+    @State private var dangerLevel = 1
+    @State private var isFavorite = false
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                FoodItemFields(name: $name, emoji: $emoji, dangerLevel: $dangerLevel, isFavorite: $isFavorite)
+            }
+            .navigationTitle("Новый продукт")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Отмена") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Создать") {
+                        saveFoodItem()
+                    }
+                    .fontWeight(.bold)
+                    .disabled(name.isEmpty)
+                }
+            }
+        }
+    }
+    
+    private func saveFoodItem() {
+        let food = FoodItem(name: name, emoji: emoji, isFavorite: isFavorite, dangerLevel: dangerLevel)
+        modelContext.insert(food)
+        try? modelContext.save()
+        dismiss()
+    }
+}
+
+struct CreateMedicationView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var name = ""
+    @State private var emoji = "💊"
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                MedicationFields(name: $name, emoji: $emoji)
+            }
+            .navigationTitle("Создать лекарство")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Отмена") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Создать") {
+                        saveMedication()
+                    }
+                    .fontWeight(.bold)
+                    .disabled(name.isEmpty)
+                }
+            }
+        }
+    }
+    
+    private func saveMedication() {
+        let medication = Medication(name: name, emoji: emoji)
+        modelContext.insert(medication)
+        try? modelContext.save()
+        dismiss()
+    }
+}
+
 #Preview {
     SettingsView()
         .modelContainer(for: [
@@ -852,4 +879,154 @@ struct DataManagementView: View {
             FoodItem.self, FoodEntry.self,
             Medication.self, MedicationTemplate.self, MedicationEntry.self
         ], inMemory: true)
+}
+
+// MARK: - Reusable Components
+struct EmojiPickerButton: View {
+    @Binding var emoji: String
+    @FocusState private var isEmojiFocused: Bool
+    
+    var body: some View {
+        ZStack {
+            // Invisible Native TextField to trigger emoji keyboard
+            EmojiTextFieldNative(text: $emoji)
+                .focused($isEmojiFocused)
+                .opacity(0)
+                .frame(width: 1, height: 1)
+                .onChange(of: emoji) { _, newValue in
+                    if newValue.count > 1 {
+                        emoji = String(newValue.last!)
+                        isEmojiFocused = false // Dismiss after choice
+                    }
+                }
+            
+            Button(action: { isEmojiFocused = true }) {
+                Text(emoji)
+                    .font(.title)
+                    .frame(width: 54, height: 54)
+                    .background(Color.accentColor.opacity(0.1))
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(Color.accentColor.opacity(0.2), lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+struct FoodItemFields: View {
+    @Binding var name: String
+    @Binding var emoji: String
+    @Binding var dangerLevel: Int
+    @Binding var isFavorite: Bool
+    
+    var body: some View {
+        Group {
+            Section {
+                HStack(spacing: 16) {
+                    EmojiPickerButton(emoji: $emoji)
+                    
+                    TextField("Название продукта", text: $name)
+                        .font(.headline)
+                }
+                .padding(.vertical, 4)
+                
+                Toggle("Избранное", isOn: $isFavorite)
+            } header: {
+                Text("Основная информация")
+            }
+            
+            Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Уровень опасности")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    
+                    DangerLevelPicker(selection: $dangerLevel)
+                }
+                .padding(.vertical, 4)
+            } header: {
+                Text("Параметры")
+            }
+        }
+    }
+}
+
+struct MedicationFields: View {
+    @Binding var name: String
+    @Binding var emoji: String
+    
+    var body: some View {
+        Section {
+            HStack(spacing: 16) {
+                EmojiPickerButton(emoji: $emoji)
+                
+                TextField("Название лекарства", text: $name)
+                    .font(.headline)
+            }
+            .padding(.vertical, 4)
+        } header: {
+            Text("Основная информация")
+        }
+    }
+}
+
+struct BodyAreaFields: View {
+    @Binding var name: String
+    @Binding var emoji: String
+    @Binding var isSkinRelated: Bool
+    
+    var body: some View {
+        Group {
+            Section {
+                HStack(spacing: 16) {
+                    EmojiPickerButton(emoji: $emoji)
+                    
+                    TextField("Название зоны", text: $name)
+                        .font(.headline)
+                }
+                .padding(.vertical, 4)
+            } header: {
+                Text("Основная информация")
+            }
+            
+            Section {
+                Toggle("Связана с кожей", isOn: $isSkinRelated)
+            } header: {
+                Text("Параметры")
+            }
+        }
+    }
+}
+
+struct DangerLevelPicker: View {
+    @Binding var selection: Int
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(1...5, id: \.self) { level in
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        selection = level
+                    }
+                }) {
+                    Text("\(level)")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(selection == level ? Color.dangerColor(level) : Color(.tertiarySystemBackground))
+                        )
+                        .foregroundStyle(selection == level ? .white : .primary)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(selection == level ? Color.clear : Color.secondary.opacity(0.2), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
 }

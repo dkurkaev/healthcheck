@@ -30,8 +30,7 @@ struct AddFoodView: View {
                         Text("Быстрый выбор")
                             .font(.headline)
                         
-                        TextField("Поиск существующих...", text: $searchText)
-                            .textFieldStyle(.roundedBorder)
+                        AppTextField(title: "Поиск существующих...", text: $searchText, icon: "magnifyingglass")
                         
                         if !filteredExisting.isEmpty {
                             LazyVStack(spacing: 6) {
@@ -96,10 +95,7 @@ struct AddFoodView: View {
                             }
                         }
                         
-                        // Name
-                        TextField("Название продукта", text: $name)
-                            .textFieldStyle(.roundedBorder)
-                            .font(.headline)
+                        AppTextField(title: "Название продукта", text: $name, icon: "text.cursor")
                         
                         // Danger Level
                         VStack(alignment: .leading, spacing: 8) {
@@ -156,7 +152,10 @@ struct AddFoodView: View {
                     .cardStyle()
                 }
                 .padding()
+                .contentShape(Rectangle())
+                .dismissKeyboardOnTap()
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Добавить еду")
             .navigationBarTitleDisplayMode(.inline)

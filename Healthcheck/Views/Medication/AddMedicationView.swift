@@ -36,9 +36,7 @@ struct AddMedicationView: View {
                     }
                     
                     // Name
-                    TextField("Название лекарства", text: $name)
-                        .textFieldStyle(.roundedBorder)
-                        .font(.headline)
+                    AppTextField(title: "Название лекарства", text: $name, icon: "pills.fill")
                         .padding(.horizontal)
                 }
             }

@@ -160,14 +160,16 @@ struct ApplyMedicationView: View {
                         Text("Заметка")
                             .font(.headline)
                         
-                        TextField("Дополнительная информация...", text: $note)
-                            .textFieldStyle(.roundedBorder)
+                        AppTextField(title: "Дополнительная информация...", text: $note, icon: "note.text")
                     }
                     .padding()
                     .cardStyle()
                 }
                 .padding()
+                .contentShape(Rectangle())
+                .dismissKeyboardOnTap()
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Применить лекарство")
             .navigationBarTitleDisplayMode(.inline)
