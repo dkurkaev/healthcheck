@@ -189,26 +189,27 @@ struct LargeSelectableTile: View {
     }
 }
 
-struct ActionButtonCard: View {
+struct ActionButtonRow: View {
     let title: String
     let icon: String
     let color: Color
     let action: () -> Void
     
+    init(title: String, icon: String = "plus.circle.fill", color: Color = .blue, action: @escaping () -> Void) {
+        self.title = title
+        self.icon = icon
+        self.color = color
+        self.action = action
+    }
+    
     var body: some View {
         Button(action: action) {
             HStack {
                 Label(title, systemImage: icon)
-                    .fontWeight(.bold)
                     .foregroundStyle(color)
                 Spacer()
-                Image(systemName: "plus")
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundStyle(color.opacity(0.8))
             }
-            .padding()
-            .cardStyle()
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

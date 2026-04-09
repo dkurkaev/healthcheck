@@ -5,7 +5,6 @@ struct CreateMedicationView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
-    // If nil, we are creating a new medication
     var medication: Medication?
     
     @Query(sort: \BodyArea.sortOrder)
@@ -13,29 +12,33 @@ struct CreateMedicationView: View {
     
     @State private var editName: String = ""
     @State private var editEmoji: String = ""
-    
-    // For creating new templates before the medication is saved
     @State private var tempTemplates: [TempTemplate] = []
     
-    @State private var showAddTemplate = false
-    @State private var editingSavedTemplate: MedicationTemplate?
-    @State private var editingTempTemplateID: UUID?
-    
-    @State private var newTemplateName = ""
-    @State private var selectedBodyAreas: Set<UUID> = []
-    
-    // Snapshots for template change detection
-    @State private var originalTemplateName = ""
-    @State private var originalTemplateBodyAreas: Set<UUID> = []
+    // Better Sheet Management
+    @State private var activeSheet: ActiveTemplateSheet?
     
     @State private var showDeleteConfirmation = false
     
     private var isNew: Bool { medication == nil }
     
-    struct TempTemplate: Identifiable {
+    struct TempTemplate: Identifiable, Equatable {
         let id = UUID()
         var name: String
         var bodyAreaIDs: Set<UUID>
+    }
+    
+    enum ActiveTemplateSheet: Identifiable {
+        case new
+        case editSaved(MedicationTemplate)
+        case editTemp(TempTemplate)
+        
+        var id: String {
+            switch self {
+            case .new: return "new"
+            case .editSaved(let t): return t.id.uuidString
+            case .editTemp(let t): return t.id.uuidString
+            }
+        }
     }
     
     var body: some View {
@@ -65,7 +68,6 @@ struct CreateMedicationView: View {
             .listRowInsets(EdgeInsets(top: 12, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
             
             if let med = medication {
-                // Statistics Section
                 VStack(alignment: .leading, spacing: 8) {
                     Text("СТАТИСТИКА")
                         .font(.caption2)
@@ -93,22 +95,19 @@ struct CreateMedicationView: View {
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 16, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
             
+            // Templates Cards
             if isNew {
-                // Show temp templates
                 ForEach(tempTemplates) { template in
-                    Button(action: { prepareEditTemp(template) }) {
+                    Button(action: { activeSheet = .editTemp(template) }) {
                         templateRow(name: template.name, areaIDs: template.bodyAreaIDs)
                             .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
                             .cardStyle()
                     }
                     .buttonStyle(.plain)
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
                             tempTemplates.removeAll { $0.id == template.id }
-                        } label: {
-                            Label("Удалить", systemImage: "trash")
-                        }
+                        } label: { Label("Удалить", systemImage: "trash") }
                         .tint(.red)
                     }
                 }
@@ -116,12 +115,10 @@ struct CreateMedicationView: View {
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 4, leading: .appHorizontalPadding, bottom: 4, trailing: .appHorizontalPadding))
             } else if let med = medication {
-                // Show saved templates
                 ForEach(med.templates) { template in
-                    Button(action: { prepareEditSaved(template) }) {
+                    Button(action: { activeSheet = .editSaved(template) }) {
                         templateRow(name: template.name, areaIDs: Set(template.bodyAreas.map(\.id)))
                             .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
                             .cardStyle()
                     }
                     .buttonStyle(.plain)
@@ -129,9 +126,7 @@ struct CreateMedicationView: View {
                         Button(role: .destructive) {
                             modelContext.delete(template)
                             try? modelContext.save()
-                        } label: {
-                            Label("Удалить", systemImage: "trash")
-                        }
+                        } label: { Label("Удалить", systemImage: "trash") }
                         .tint(.red)
                     }
                 }
@@ -140,14 +135,17 @@ struct CreateMedicationView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: .appHorizontalPadding, bottom: 4, trailing: .appHorizontalPadding))
             }
             
-            // Add Template Button as a Card
-            ActionButtonCard(title: "Добавить шаблон", icon: "plus.circle.fill", color: .medicationBlue) {
-                clearEditorState()
-                showAddTemplate = true 
+            // Add Template Button - Standardised Row in a Card container to avoid sticking
+            Section {
+                ActionButtonRow(title: "Добавить шаблон", color: .medicationBlue) {
+                    activeSheet = .new
+                }
+                .padding()
+                .cardStyle()
             }
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 8, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
+            .listRowInsets(EdgeInsets(top: 12, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
             
             // Footer Info
             Text("Шаблоны связывают лекарство с зонами тела для быстрого применения")
@@ -158,7 +156,6 @@ struct CreateMedicationView: View {
                 .listRowInsets(EdgeInsets(top: 8, leading: .appHorizontalPadding, bottom: 20, trailing: .appHorizontalPadding))
 
             if !isNew {
-                // Delete Section
                 Button(role: .destructive) {
                     showDeleteConfirmation = true
                 } label: {
@@ -188,11 +185,9 @@ struct CreateMedicationView: View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 if isNew {
-                    Button("Создать") {
-                        saveNewMedication()
-                    }
-                    .fontWeight(.bold)
-                    .disabled(editName.isEmpty)
+                    Button("Создать") { saveNewMedication() }
+                        .fontWeight(.bold)
+                        .disabled(editName.isEmpty)
                 } else {
                     let hasChanges = medication?.name != editName || medication?.emoji != editEmoji
                     Button("Сохранить") {
@@ -224,16 +219,31 @@ struct CreateMedicationView: View {
         } message: {
             Text("Лекарство \"\(editName)\" и все связанные шаблоны/записи будут удалены.")
         }
-        .sheet(isPresented: $showAddTemplate) {
-            addTemplateSheet
+        .sheet(item: $activeSheet) { sheet in
+            TemplateEditorSheet(
+                mode: sheet,
+                bodyAreas: bodyAreas,
+                isParentNew: isNew,
+                onSave: { updatedTemplate, updatedTemp in
+                    if let t = updatedTemplate {
+                        if case .new = sheet {
+                            saveNewSavedTemplate(t)
+                        }
+                    } else if let t = updatedTemp {
+                        handleSaveTempTemplate(t, original: sheet)
+                    }
+                    activeSheet = nil
+                }
+            )
         }
     }
     
     private func templateRow(name: String, areaIDs: Set<UUID>) -> some View {
         HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(name)
-                    .font(.headline)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
                     .foregroundStyle(.primary)
                 
                 let areas = bodyAreas.filter { areaIDs.contains($0.id) }
@@ -244,218 +254,175 @@ struct CreateMedicationView: View {
                                 Text(area.emoji)
                                 Text(area.name)
                             }
-                            .font(.footnote)
+                            .font(.caption2)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
-                            .background(Color.medicationBlue.opacity(0.1))
+                            .background(Color.medicationBlue.opacity(0.12))
                             .foregroundStyle(Color.medicationBlue)
                             .clipShape(Capsule())
                         }
                     }
                 }
             }
-            
             Spacer()
-            
             Image(systemName: "chevron.right")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }
-        .padding(.vertical, 4)
     }
     
-    private func clearEditorState() {
-        newTemplateName = ""
-        selectedBodyAreas = []
-        originalTemplateName = ""
-        originalTemplateBodyAreas = []
-        editingTempTemplateID = nil
-        editingSavedTemplate = nil
+    private func handleSaveTempTemplate(_ template: TempTemplate, original: ActiveTemplateSheet) {
+        if case .editTemp(let old) = original {
+            if let index = tempTemplates.firstIndex(where: { $0.id == old.id }) {
+                tempTemplates[index] = template
+            }
+        } else {
+            tempTemplates.append(template)
+        }
     }
-    
-    private func prepareEditTemp(_ template: TempTemplate) {
-        newTemplateName = template.name
-        selectedBodyAreas = template.bodyAreaIDs
-        editingTempTemplateID = template.id
-        showAddTemplate = true
-    }
-    
-    private func prepareEditSaved(_ template: MedicationTemplate) {
-        clearEditorState()
-        
-        newTemplateName = template.name
-        
-        // Ensure areas are loaded and mapped correctly
-        let areas = Array(template.bodyAreas)
-        let ids = Set(areas.map(\.id))
-        selectedBodyAreas = ids
-        
-        // Snapshot for change detection
-        originalTemplateName = template.name
-        originalTemplateBodyAreas = ids
-        
-        editingSavedTemplate = template
-        showAddTemplate = true
+
+    private func saveNewSavedTemplate(_ template: MedicationTemplate) {
+        guard let med = medication else { return }
+        template.medication = med
+        modelContext.insert(template)
+        try? modelContext.save()
     }
     
     private func saveNewMedication() {
         let newMed = Medication(name: editName, emoji: editEmoji)
         modelContext.insert(newMed)
-        
-        // Save temp templates
         for temp in tempTemplates {
             let selectedAreas = bodyAreas.filter { temp.bodyAreaIDs.contains($0.id) }
-            let template = MedicationTemplate(
-                name: temp.name,
-                medication: newMed,
-                bodyAreas: selectedAreas
-            )
+            let template = MedicationTemplate(name: temp.name, medication: newMed, bodyAreas: selectedAreas)
             modelContext.insert(template)
         }
-        
         try? modelContext.save()
         dismiss()
     }
     
     private func updateMedication() {
         guard let med = medication else { return }
-        if !editName.isEmpty { med.name = editName }
-        if !editEmoji.isEmpty { med.emoji = editEmoji }
+        med.name = editName
+        med.emoji = editEmoji
         try? modelContext.save()
     }
+}
+
+// MARK: - Dedicated Template Editor Sheet to solve state bugs
+struct TemplateEditorSheet: View {
+    let mode: CreateMedicationView.ActiveTemplateSheet
+    let bodyAreas: [BodyArea]
+    let isParentNew: Bool
+    let onSave: (MedicationTemplate?, CreateMedicationView.TempTemplate?) -> Void
     
-    // MARK: - Add Template Sheet
-    private var addTemplateSheet: some View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var selectedBodyAreas: Set<UUID> = []
+    
+    var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("НАЗВАНИЕ ШАБЛОНА")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        
-                        TextField("Например: На всю кожу", text: $newTemplateName)
-                            .font(.headline)
-                            .padding()
-                            .cardStyle()
+            Form {
+                Section("Название шаблона") {
+                    TextField("Например: На всю кожу", text: $name)
+                        .font(.headline)
+                }
+                
+                Section {
+                    HStack {
+                        Text("Зоны тела")
+                        Spacer()
+                        Button(action: toggleSkin) {
+                            Text(isAllSkinSelected ? "Снять все" : "Вся кожа")
+                                .font(.caption).fontWeight(.bold)
+                        }
                     }
-                    .padding(.bottom, 8)
                     
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("ЗОНЫ ТЕЛА")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                            Spacer()
+                    FlowLayoutList(spacing: 8) {
+                        ForEach(bodyAreas) { area in
+                            let isSelected = selectedBodyAreas.contains(area.id)
                             Button(action: {
-                                let skinAreas = bodyAreas.filter { $0.isSkinRelated }
-                                let skinAreaIDs = Set(skinAreas.map(\.id))
-                                if skinAreaIDs.isSubset(of: selectedBodyAreas) && !skinAreaIDs.isEmpty {
-                                    selectedBodyAreas.subtract(skinAreaIDs)
-                                } else {
-                                    selectedBodyAreas.formUnion(skinAreaIDs)
-                                }
+                                if isSelected { selectedBodyAreas.remove(area.id) }
+                                else { selectedBodyAreas.insert(area.id) }
                             }) {
-                                let skinAreas = bodyAreas.filter { $0.isSkinRelated }
-                                let skinAreaIDs = Set(skinAreas.map(\.id))
-                                let allSkinSelected = !skinAreaIDs.isEmpty && skinAreaIDs.isSubset(of: selectedBodyAreas)
-                                Text(allSkinSelected ? "Снять все" : "Вся кожа")
-                                    .font(.caption2)
-                                    .foregroundStyle(Color.medicationBlue)
+                                HStack(spacing: 4) {
+                                    Text(area.emoji)
+                                    Text(area.name).font(.caption)
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(isSelected ? Color.medicationBlue.opacity(0.12) : Color.clear)
+                                .foregroundStyle(isSelected ? Color.medicationBlue : .primary)
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(isSelected ? Color.medicationBlue.opacity(0.3) : Color.secondary.opacity(0.2), lineWidth: 1))
                             }
                             .buttonStyle(.plain)
                         }
-                        
-                        FlowLayoutList(spacing: 8) {
-                            ForEach(bodyAreas) { area in
-                                let isSelected = selectedBodyAreas.contains(area.id)
-                                Button(action: {
-                                    if isSelected {
-                                        selectedBodyAreas.remove(area.id)
-                                    } else {
-                                        selectedBodyAreas.insert(area.id)
-                                    }
-                                }) {
-                                    HStack(spacing: 4) {
-                                        Text(area.emoji)
-                                        Text(area.name)
-                                    }
-                                    .font(.footnote)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(isSelected ? Color.medicationBlue.opacity(0.12) : Color(.tertiarySystemGroupedBackground))
-                                    .foregroundStyle(isSelected ? Color.medicationBlue : .primary)
-                                    .clipShape(Capsule())
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(isSelected ? Color.medicationBlue.opacity(0.3) : Color.clear, lineWidth: 1)
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
                     }
-                    .padding()
-                    .cardStyle()
-                }
-                .padding()
+                    .padding(.vertical, 8)
+                } header: { Text("Зоны применения") }
             }
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle((editingSavedTemplate == nil && editingTempTemplateID == nil) ? "Новый шаблон" : "Изменить шаблон")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
-                        showAddTemplate = false
-                        clearEditorState()
-                    }
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("Отмена") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    let hasTemplateChanges = newTemplateName != originalTemplateName || selectedBodyAreas != originalTemplateBodyAreas
                     Button("Сохранить") {
-                        handleSaveTemplate()
+                        handleSave()
+                        dismiss()
                     }
                     .fontWeight(.bold)
-                    .disabled(newTemplateName.isEmpty || selectedBodyAreas.isEmpty || (editingSavedTemplate != nil && !hasTemplateChanges))
+                    .disabled(name.isEmpty || selectedBodyAreas.isEmpty)
                 }
             }
+            .onAppear(perform: setup)
         }
     }
     
-    private func handleSaveTemplate() {
-        if let tempID = editingTempTemplateID {
-            // Update temp template
-            if let index = tempTemplates.firstIndex(where: { $0.id == tempID }) {
-                tempTemplates[index].name = newTemplateName
-                tempTemplates[index].bodyAreaIDs = selectedBodyAreas
-            }
-        } else if let saved = editingSavedTemplate {
-            // Update saved template
-            saved.name = newTemplateName
-            let selected = bodyAreas.filter { selectedBodyAreas.contains($0.id) }
-            saved.bodyAreas = selected
-            try? modelContext.save()
+    private var title: String {
+        if case .new = mode { return "Новый шаблон" }
+        return "Изменить шаблон"
+    }
+    
+    private var isAllSkinSelected: Bool {
+        let skinAreas = bodyAreas.filter { $0.isSkinRelated }
+        return !skinAreas.isEmpty && skinAreas.allSatisfy { selectedBodyAreas.contains($0.id) }
+    }
+    
+    private func toggleSkin() {
+        if isAllSkinSelected {
+            selectedBodyAreas.removeAll()
         } else {
-            // New template
-            if isNew {
-                tempTemplates.append(TempTemplate(name: newTemplateName, bodyAreaIDs: selectedBodyAreas))
-            } else {
-                saveNewSavedTemplate()
-            }
+            let skinAreas = bodyAreas.filter { $0.isSkinRelated }
+            selectedBodyAreas.formUnion(skinAreas.map(\.id))
         }
-        showAddTemplate = false
-        clearEditorState()
     }
     
-    private func saveNewSavedTemplate() {
-        guard let med = medication else { return }
-        let selected = bodyAreas.filter { selectedBodyAreas.contains($0.id) }
-        let template = MedicationTemplate(
-            name: newTemplateName,
-            medication: med,
-            bodyAreas: selected
-        )
-        modelContext.insert(template)
-        try? modelContext.save()
+    private func setup() {
+        switch mode {
+        case .new:
+            break
+        case .editSaved(let t):
+            name = t.name
+            selectedBodyAreas = Set(t.bodyAreas.map(\.id))
+        case .editTemp(let t):
+            name = t.name
+            selectedBodyAreas = t.bodyAreaIDs
+        }
+    }
+    
+    private func handleSave() {
+        if isParentNew {
+            let temp = CreateMedicationView.TempTemplate(name: name, bodyAreaIDs: selectedBodyAreas)
+            onSave(nil, temp)
+        } else {
+            if case .editSaved(let t) = mode {
+                t.name = name
+                t.bodyAreas = bodyAreas.filter { selectedBodyAreas.contains($0.id) }
+                onSave(t, nil)
+            } else {
+                let newT = MedicationTemplate(name: name, bodyAreas: bodyAreas.filter { selectedBodyAreas.contains($0.id) })
+                onSave(newT, nil)
+            }
+        }
     }
 }
