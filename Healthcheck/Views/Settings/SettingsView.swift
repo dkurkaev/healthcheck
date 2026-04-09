@@ -333,89 +333,66 @@ struct MedicationEditView: View {
     // MARK: - Add Template Sheet
     private var addTemplateSheet: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Template Name
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Название шаблона")
-                            .font(.headline)
-                        
-                        AppTextField(title: "Например: На всю кожу", text: $newTemplateName, icon: "text.quote")
-                    }
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    
-                    // Body Areas
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Зоны тела")
-                                .font(.headline)
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                let skinAreas = bodyAreas.filter { $0.isSkinRelated }
-                                if selectedBodyAreas == Set(skinAreas.map(\.id)) {
-                                    selectedBodyAreas.removeAll()
-                                } else {
-                                    selectedBodyAreas = Set(skinAreas.map(\.id))
-                                }
-                            }) {
-                                let allSkinSelected = Set(bodyAreas.filter(\.isSkinRelated).map(\.id)).isSubset(of: selectedBodyAreas) && !bodyAreas.filter(\.isSkinRelated).isEmpty
-                                Text(allSkinSelected ? "Снять все" : "Вся кожа")
-                                    .font(.caption)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(allSkinSelected ? Color.medicationBlue : Color(.tertiarySystemBackground))
-                                    .foregroundStyle(allSkinSelected ? .white : .primary)
-                                    .clipShape(Capsule())
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        
+            Form {
+                Section {
+                    TextField("Например: На всю кожу", text: $newTemplateName)
+                } header: {
+                    Text("Название шаблона")
+                }
+                
+                Section {
+                    FlowLayout(spacing: 8) {
                         ForEach(bodyAreas) { area in
+                            let isSelected = selectedBodyAreas.contains(area.id)
                             Button(action: {
-                                if selectedBodyAreas.contains(area.id) {
+                                if isSelected {
                                     selectedBodyAreas.remove(area.id)
                                 } else {
                                     selectedBodyAreas.insert(area.id)
                                 }
                             }) {
-                                HStack {
+                                HStack(spacing: 4) {
                                     Text(area.emoji)
                                     Text(area.name)
-                                        .font(.subheadline)
-                                    
-                                    if area.isSkinRelated {
-                                        Text("кожа")
-                                            .font(.caption2)
-                                            .padding(.horizontal, 4)
-                                            .padding(.vertical, 1)
-                                            .background(Color.blue.opacity(0.1))
-                                            .foregroundStyle(.blue)
-                                            .clipShape(Capsule())
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: selectedBodyAreas.contains(area.id)
-                                          ? "checkmark.circle.fill"
-                                          : "circle")
-                                        .foregroundStyle(selectedBodyAreas.contains(area.id) ? Color.medicationBlue : .secondary)
+                                        .font(.caption)
                                 }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(isSelected ? Color.medicationBlue.opacity(0.15) : Color.clear)
+                                .foregroundStyle(isSelected ? .medicationBlue : .primary)
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(isSelected ? Color.medicationBlue : Color.secondary.opacity(0.2), lineWidth: 1)
+                                )
                             }
                             .buttonStyle(.plain)
-                            .padding(.vertical, 4)
                         }
                     }
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .padding(.vertical, 8)
+                } header: {
+                    HStack {
+                        Text("Зоны применения")
+                        Spacer()
+                        Button(action: {
+                            let skinAreas = bodyAreas.filter { $0.isSkinRelated }
+                            let allSelected = !skinAreas.isEmpty && skinAreas.allSatisfy { selectedBodyAreas.contains($0.id) }
+                            if allSelected {
+                                selectedBodyAreas.removeAll()
+                            } else {
+                                selectedBodyAreas = Set(skinAreas.map(\.id))
+                            }
+                        }) {
+                            let skinAreas = bodyAreas.filter { $0.isSkinRelated }
+                            let allSelected = !skinAreas.isEmpty && skinAreas.allSatisfy { selectedBodyAreas.contains($0.id) }
+                            Text(allSelected ? "Снять все" : "Вся кожа")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .textCase(.none)
+                        }
+                    }
                 }
-                .padding()
             }
-            .background(Color(.systemGroupedBackground))
             .navigationTitle("Новый шаблон")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

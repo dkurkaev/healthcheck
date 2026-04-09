@@ -12,7 +12,6 @@ struct AddFoodView: View {
     @State private var emoji = "🍽"
     @State private var dangerLevel = 1
     @State private var isFavorite = false
-    @State private var logImmediately = true
     @State private var searchText = ""
     @State private var selectedExisting: FoodItem?
     
@@ -26,7 +25,11 @@ struct AddFoodView: View {
             Form {
                 // Quick Search Existing
                 Section {
-                    AppTextField(title: "Поиск существующих...", text: $searchText, icon: "magnifyingglass")
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(.secondary)
+                        TextField("Поиск существующих...", text: $searchText)
+                    }
                     
                     if !filteredExisting.isEmpty {
                         ForEach(filteredExisting.prefix(5)) { item in
@@ -54,23 +57,21 @@ struct AddFoodView: View {
                     Text("Быстрый выбор")
                 }
                 
-                // New Food Form - Shared Pattern
-                FoodItemFields(name: $name, emoji: $emoji, dangerLevel: $dangerLevel, isFavorite: $isFavorite)
-                
-                Section {
-                    Toggle(isOn: $logImmediately) {
-                        Label {
-                            Text("Записать сразу")
-                        } icon: {
-                            Image(systemName: "clock.arrow.circlepath")
-                                .foregroundStyle(.blue)
-                        }
-                    }
-                } header: {
-                    Text("Действие")
-                } footer: {
-                    Text("Если включено, продукт будет не только создан, но и сразу добавлен в ваш журнал")
+                // More compact Divider
+                HStack {
+                    VStack { Divider() }
+                    Text("или создать новый")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                    VStack { Divider() }
                 }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                
+                FoodItemFields(name: $name, emoji: $emoji, dangerLevel: $dangerLevel, isFavorite: $isFavorite)
             }
             .navigationTitle("Добавить еду")
             .navigationBarTitleDisplayMode(.inline)
@@ -98,10 +99,8 @@ struct AddFoodView: View {
         )
         modelContext.insert(food)
         
-        if logImmediately {
-            let entry = FoodEntry(foodItem: food)
-            modelContext.insert(entry)
-        }
+        let entry = FoodEntry(foodItem: food)
+        modelContext.insert(entry)
         
         try? modelContext.save()
         dismiss()
