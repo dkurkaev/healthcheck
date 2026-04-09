@@ -177,11 +177,10 @@ struct LargeSelectableTile: View {
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(isSelected ? accentColor : Color(.secondarySystemGroupedBackground))
-                    .shadow(color: isSelected ? accentColor.opacity(0.3) : Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? Color.white.opacity(0.4) : Color.secondary.opacity(0.1), lineWidth: 1)
+                    .stroke(isSelected ? Color.white.opacity(0.4) : Color.secondary.opacity(0.2), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -293,7 +292,7 @@ struct DangerLevelPicker: View {
                         .padding(.vertical, 10)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(selection == level ? Color.dangerColor(level) : Color(.tertiarySystemBackground))
+                                .fill(selection == level ? Color.dangerColor(level) : Color(.secondarySystemGroupedBackground))
                         )
                         .foregroundStyle(selection == level ? .white : .primary)
                         .overlay(

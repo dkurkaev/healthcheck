@@ -16,7 +16,7 @@ struct AppTextField: View {
                 .textFieldStyle(.plain)
         }
         .padding(10)
-        .background(Color(.tertiarySystemBackground))
+        .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             RoundedRectangle(cornerRadius: 10)

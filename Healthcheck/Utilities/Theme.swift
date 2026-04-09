@@ -85,9 +85,8 @@ extension LinearGradient {
 struct CardStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .background(.ultraThinMaterial)
+            .background(Color(.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
     }
 }
 
