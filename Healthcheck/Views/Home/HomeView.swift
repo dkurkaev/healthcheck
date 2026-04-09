@@ -47,7 +47,7 @@ struct HomeView: View {
                 .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
                 .listRowSeparator(.hidden)
                 
-                // History Section Header (as a plain row for perfect alignment and color)
+                // History Section Header
                 historyHeader
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 20, leading: 0, bottom: 8, trailing: 0))
@@ -137,7 +137,7 @@ struct HomeView: View {
                 Text(selectedHistoryType.rawValue)
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundStyle(.primary) // Solid black
+                    .foregroundStyle(.primary)
                 
                 Image(systemName: "chevron.down.circle.fill")
                     .font(.body)
@@ -161,41 +161,14 @@ struct HomeView: View {
     }
     
     private var ratingsList: some View {
-        let transactions = groupRatingsIntoTransactions(recentRatings)
-        return Group {
-            if transactions.isEmpty {
+        Group {
+            if recentRatings.isEmpty {
                 emptyHistoryView(message: "Пока нет оценок")
             } else {
-                ForEach(transactions.prefix(25), id: \.key) { transaction in
-                    let ratings = transaction.ratings
-                    let avgRating = ratings.isEmpty ? 0 : Int((Double(ratings.map(\.rating).reduce(0, +)) / Double(ratings.count)).rounded())
-                    
-                    ZStack {
-                        NavigationLink(destination: RatingTransactionDetailView(timestamp: transaction.timestamp, ratings: ratings)) {
-                            EmptyView()
-                        }
-                        .opacity(0)
-                        
-                        TimelineRow(
-                            emoji: RatingLabel.emoji(for: avgRating),
-                            title: "Оценка здоровья",
-                            subtitle: "\(ratings.count) зон · \(RatingLabel.text(for: avgRating))",
-                            time: transaction.timestamp.relativeString,
-                            accentColor: Color.ratingColor(avgRating)
-                        )
-                    }
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            ratings.forEach { modelContext.delete($0) }
-                            try? modelContext.save()
-                        } label: {
-                            Label("Удалить", systemImage: "trash")
-                        }
-                    }
-                }
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
+                SharedRatingsList(ratings: recentRatings, limit: 25)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
             }
         }
     }
@@ -227,6 +200,7 @@ struct HomeView: View {
                         } label: {
                             Label("Удалить", systemImage: "trash")
                         }
+                        .tint(.red)
                     }
                 }
                 .listRowSeparator(.hidden)
@@ -264,6 +238,7 @@ struct HomeView: View {
                         } label: {
                             Label("Удалить", systemImage: "trash")
                         }
+                        .tint(.red)
                     }
                 }
                 .listRowSeparator(.hidden)
@@ -284,66 +259,5 @@ struct HomeView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
-    }
-    
-    private func groupRatingsIntoTransactions(_ ratings: [BodyAreaRating]) -> [(key: String, timestamp: Date, ratings: [BodyAreaRating])] {
-        let grouped = Dictionary(grouping: ratings) { rating -> String in
-            let calendar = Calendar.current
-            let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: rating.timestamp)
-            return "\(components.year ?? 0)-\(components.month ?? 0)-\(components.day ?? 0)-\(components.hour ?? 0)-\(components.minute ?? 0)"
-        }
-        return grouped.map { key, ratings in
-            (key: key, timestamp: ratings.first?.timestamp ?? Date(), ratings: ratings.sorted { ($0.bodyArea?.sortOrder ?? 0) < ($1.bodyArea?.sortOrder ?? 0) })
-        }.sorted { $0.timestamp > $1.timestamp }
-    }
-}
-
-// MARK: - Timeline Row
-struct TimelineRow: View {
-    let emoji: String
-    let title: String
-    let subtitle: String?
-    let time: String
-    let accentColor: Color
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Text(emoji)
-                .font(.title2)
-                .frame(width: 44, height: 44)
-                .background(accentColor.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.primary)
-                
-                if let subtitle, !subtitle.isEmpty {
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            }
-            
-            Spacer()
-            
-            HStack(spacing: 8) {
-                Text(time)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption2)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.tertiary)
-            }
-        }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }

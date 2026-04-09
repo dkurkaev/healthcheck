@@ -189,6 +189,31 @@ struct LargeSelectableTile: View {
     }
 }
 
+struct ActionButtonCard: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Label(title, systemImage: icon)
+                    .fontWeight(.bold)
+                    .foregroundStyle(color)
+                Spacer()
+                Image(systemName: "plus")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundStyle(color.opacity(0.8))
+            }
+            .padding()
+            .cardStyle()
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 // MARK: - Shared Dictionary Fields
 struct FoodItemFields: View {
     @Binding var name: String
@@ -233,17 +258,13 @@ struct MedicationFields: View {
     @Binding var emoji: String
     
     var body: some View {
-        Section {
-            HStack(spacing: 16) {
-                EmojiPickerButton(emoji: $emoji)
-                
-                TextField("Название лекарства", text: $name)
-                    .font(.headline)
-            }
-            .padding(.vertical, 4)
-        } header: {
-            Text("Основная информация")
+        HStack(spacing: 16) {
+            EmojiPickerButton(emoji: $emoji)
+            
+            TextField("Название лекарства", text: $name)
+                .font(.headline)
         }
+        .padding(.vertical, 4)
     }
 }
 
@@ -303,6 +324,56 @@ struct DangerLevelPicker: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+}
+
+// MARK: - Timeline Row
+struct TimelineRow: View {
+    let emoji: String
+    let title: String
+    let subtitle: String?
+    let time: String
+    let accentColor: Color
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(emoji)
+                .font(.title2)
+                .frame(width: 44, height: 44)
+                .background(accentColor.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+                
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            
+            Spacer()
+            
+            HStack(spacing: 8) {
+                Text(time)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }
 
@@ -493,12 +564,14 @@ struct RatingTransactionDetailView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
                     Text(timestamp.fullDateString)
-                        .font(.headline)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
                     Text(timestamp.timeString)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                    Spacer()
                 }
                 .padding(.vertical, 4)
             } header: {
@@ -560,7 +633,13 @@ struct EditRatingViewFromHistory: View {
     
     @State private var editedRatings: [UUID: Int] = [:]
     @State private var editedNotes: [UUID: String] = [:]
-    @State private var editTimestamp: Date = Date()
+    @State private var editTimestamp: Date
+    
+    init(ratings: [BodyAreaRating], timestamp: Date) {
+        self.ratings = ratings
+        self.timestamp = timestamp
+        _editTimestamp = State(initialValue: timestamp)
+    }
     
     var body: some View {
         NavigationStack {
@@ -588,10 +667,29 @@ struct EditRatingViewFromHistory: View {
                                     .font(.title3)
                             }
                             
-                            DangerLevelPicker(selection: Binding(
-                                get: { editedRatings[rating.id] ?? rating.rating },
-                                set: { editedRatings[rating.id] = $0 }
-                            ))
+                            // Rating selector with correct colors (1=red, 5=green)
+                            HStack(spacing: 8) {
+                                ForEach(1...5, id: \.self) { value in
+                                    let currentValue = editedRatings[rating.id] ?? rating.rating
+                                    Button(action: {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                            editedRatings[rating.id] = value
+                                        }
+                                    }) {
+                                        Text("\(value)")
+                                            .font(.headline)
+                                            .fontWeight(currentValue == value ? .bold : .regular)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 10)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(currentValue == value ? Color.ratingColor(value) : Color(.tertiarySystemBackground))
+                                            )
+                                            .foregroundStyle(currentValue == value ? .white : .primary)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
                             
                             TextField("Заметка...", text: Binding(
                                 get: { editedNotes[rating.id] ?? rating.note },
@@ -635,3 +733,65 @@ struct EditRatingViewFromHistory: View {
     }
 }
 
+
+// MARK: - Shared Ratings Components
+struct RatingTransaction: Identifiable {
+    let id: String
+    let timestamp: Date
+    let ratings: [BodyAreaRating]
+}
+
+struct SharedRatingsList: View {
+    @Environment(\.modelContext) private var modelContext
+    let ratings: [BodyAreaRating]
+    var limit: Int? = nil
+    
+    var body: some View {
+        let transactions = groupRatingsIntoTransactions(ratings)
+        let displayList = limit != nil ? Array(transactions.prefix(limit!)) : transactions
+        
+        ForEach(displayList, id: \.id) { transaction in
+            let ratings = transaction.ratings
+            let avgRating = ratings.isEmpty ? 0 : Int((Double(ratings.map(\.rating).reduce(0, +)) / Double(ratings.count)).rounded())
+            
+            ZStack {
+                NavigationLink(destination: RatingTransactionDetailView(timestamp: transaction.timestamp, ratings: ratings)) {
+                    EmptyView()
+                }
+                .opacity(0)
+                
+                TimelineRow(
+                    emoji: RatingLabel.emoji(for: avgRating),
+                    title: "Оценка здоровья",
+                    subtitle: "\(ratings.count) зон · \(RatingLabel.text(for: avgRating))",
+                    time: transaction.timestamp.relativeString,
+                    accentColor: Color.ratingColor(avgRating)
+                )
+            }
+            .swipeActions(edge: .trailing) {
+                Button(role: .destructive) {
+                    ratings.forEach { modelContext.delete($0) }
+                    try? modelContext.save()
+                } label: {
+                    Label("Удалить", systemImage: "trash")
+                }
+                .tint(.red)
+            }
+        }
+    }
+    
+    private func groupRatingsIntoTransactions(_ ratings: [BodyAreaRating]) -> [RatingTransaction] {
+        let grouped = Dictionary(grouping: ratings) { rating -> String in
+            let calendar = Calendar.current
+            let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: rating.timestamp)
+            return "\(components.year ?? 0)-\(components.month ?? 0)-\(components.day ?? 0)-\(components.hour ?? 0)-\(components.minute ?? 0)"
+        }
+        return grouped.map { key, ratings in
+            RatingTransaction(
+                id: key,
+                timestamp: ratings.first?.timestamp ?? Date(),
+                ratings: ratings.sorted { ($0.bodyArea?.sortOrder ?? 0) < ($1.bodyArea?.sortOrder ?? 0) }
+            )
+        }.sorted { $0.timestamp > $1.timestamp }
+    }
+}

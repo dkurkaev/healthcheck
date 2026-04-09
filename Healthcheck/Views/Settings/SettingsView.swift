@@ -167,7 +167,12 @@ struct MedicationManagementView: View {
             }
             
             ForEach(medications) { medication in
-                NavigationLink(destination: MedicationEditView(medication: medication)) {
+                ZStack {
+                    NavigationLink(destination: CreateMedicationView(medication: medication)) {
+                        EmptyView()
+                    }
+                    .opacity(0)
+                    
                     HStack(spacing: 12) {
                         Text(medication.emoji)
                             .font(.title2)
@@ -185,7 +190,15 @@ struct MedicationManagementView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
                     }
+                    .padding()
+                    .cardStyle()
                 }
                 .swipeActions(edge: .trailing) {
                     Button(role: .destructive) {
@@ -194,10 +207,17 @@ struct MedicationManagementView: View {
                     } label: {
                         Label("Удалить", systemImage: "trash")
                     }
+                    .tint(.red)
                 }
             }
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
         }
+        .listStyle(.plain)
+        .background(Color(.systemGroupedBackground))
         .navigationTitle("Лекарства")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: { showAddMedication = true }) {
@@ -213,221 +233,9 @@ struct MedicationManagementView: View {
     }
 }
 
-// MARK: - Medication Edit View
-struct MedicationEditView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
-    @Bindable var medication: Medication
-    var isNew: Bool = false
     
-    @Query(sort: \BodyArea.sortOrder)
-    private var bodyAreas: [BodyArea]
-    
-    @State private var showAddTemplate = false
-    @State private var newTemplateName = ""
-    @State private var selectedBodyAreas: Set<UUID> = []
-    @State private var editName: String = ""
-    @State private var editEmoji: String = ""
-    @State private var isDiscarding = false
-    
-    var body: some View {
-        List {
-            // Information Section
-            MedicationFields(name: $editName, emoji: $editEmoji)
-            
-            if !isNew {
-                Section {
-                    HStack {
-                        Text("Применений")
-                        Spacer()
-                        Text("\(medication.entries.count)")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            
-            // Templates Section
-            Section {
-                ForEach(medication.templates) { template in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(template.name)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                        
-                        if !template.bodyAreas.isEmpty {
-                            FlowLayoutList {
-                                ForEach(template.bodyAreas) { area in
-                                    Text("\(area.emoji) \(area.name)")
-                                        .font(.caption)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 3)
-                                        .background(Color.medicationBlue.opacity(0.1))
-                                        .clipShape(Capsule())
-                                }
-                            }
-                        }
-                    }
-                    .padding(.vertical, 4)
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            modelContext.delete(template)
-                            try? modelContext.save()
-                        } label: {
-                            Label("Удалить", systemImage: "trash")
-                        }
-                    }
-                }
-                
-                Button(action: { showAddTemplate = true }) {
-                    Label("Добавить шаблон", systemImage: "plus.circle")
-                        .foregroundStyle(Color.medicationBlue)
-                }
-            } header: {
-                Text("Шаблоны применения")
-            } footer: {
-                Text("Шаблоны связывают лекарство с зонами тела для быстрого применения")
-            }
-        }
-        .navigationTitle(isNew ? "Новое лекарство" : medication.name)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if isNew {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
-                        isDiscarding = true
-                        modelContext.delete(medication)
-                        try? modelContext.save()
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Создать") {
-                        saveAndClose()
-                    }
-                    .fontWeight(.bold)
-                    .disabled(editName.isEmpty)
-                }
-            }
-        }
-        .onAppear {
-            editName = medication.name
-            editEmoji = medication.emoji
-        }
-        .onDisappear {
-            if !isDiscarding {
-                saveAndClose()
-            }
-        }
-        .sheet(isPresented: $showAddTemplate) {
-            addTemplateSheet
-        }
-    }
-    
-    private func saveAndClose() {
-        if !editName.isEmpty { medication.name = editName }
-        if !editEmoji.isEmpty { medication.emoji = editEmoji }
-        try? modelContext.save()
-        if isNew { dismiss() }
-    }
-    
-    // MARK: - Add Template Sheet
-    private var addTemplateSheet: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("Например: На всю кожу", text: $newTemplateName)
-                } header: {
-                    Text("Название шаблона")
-                }
-                
-                Section {
-                    FlowLayout(spacing: 8) {
-                        ForEach(bodyAreas) { area in
-                            let isSelected = selectedBodyAreas.contains(area.id)
-                            Button(action: {
-                                if isSelected {
-                                    selectedBodyAreas.remove(area.id)
-                                } else {
-                                    selectedBodyAreas.insert(area.id)
-                                }
-                            }) {
-                                HStack(spacing: 4) {
-                                    Text(area.emoji)
-                                    Text(area.name)
-                                        .font(.caption)
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(isSelected ? Color.medicationBlue.opacity(0.15) : Color.clear)
-                                .foregroundStyle(isSelected ? .medicationBlue : .primary)
-                                .clipShape(Capsule())
-                                .overlay(
-                                    Capsule()
-                                        .stroke(isSelected ? Color.medicationBlue : Color.secondary.opacity(0.2), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.vertical, 8)
-                } header: {
-                    HStack {
-                        Text("Зоны применения")
-                        Spacer()
-                        Button(action: {
-                            let skinAreas = bodyAreas.filter { $0.isSkinRelated }
-                            let allSelected = !skinAreas.isEmpty && skinAreas.allSatisfy { selectedBodyAreas.contains($0.id) }
-                            if allSelected {
-                                selectedBodyAreas.removeAll()
-                            } else {
-                                selectedBodyAreas = Set(skinAreas.map(\.id))
-                            }
-                        }) {
-                            let skinAreas = bodyAreas.filter { $0.isSkinRelated }
-                            let allSelected = !skinAreas.isEmpty && skinAreas.allSatisfy { selectedBodyAreas.contains($0.id) }
-                            Text(allSelected ? "Снять все" : "Вся кожа")
-                                .font(.caption2)
-                                .fontWeight(.bold)
-                                .textCase(.none)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Новый шаблон")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
-                        showAddTemplate = false
-                        newTemplateName = ""
-                        selectedBodyAreas = []
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
-                        saveTemplate()
-                    }
-                    .fontWeight(.bold)
-                    .disabled(newTemplateName.isEmpty || selectedBodyAreas.isEmpty)
-                }
-            }
-        }
-    }
-    
-    private func saveTemplate() {
-        let selected = bodyAreas.filter { selectedBodyAreas.contains($0.id) }
-        let template = MedicationTemplate(
-            name: newTemplateName,
-            medication: medication,
-            bodyAreas: selected
-        )
-        modelContext.insert(template)
-        try? modelContext.save()
-        showAddTemplate = false
-        newTemplateName = ""
-        selectedBodyAreas = []
-    }
-}
+
+// CreateMedicationView.swift is used for both adding and editing medications.
 
 // MARK: - Flow Layout for List (simplified)
 struct FlowLayoutList: Layout {
@@ -497,7 +305,12 @@ struct FoodManagementView: View {
             }
             
             ForEach(foodItems) { food in
-                NavigationLink(destination: CreateFoodItemView(food: food)) {
+                ZStack {
+                    NavigationLink(destination: CreateFoodItemView(food: food)) {
+                        EmptyView()
+                    }
+                    .opacity(0)
+                    
                     HStack(spacing: 12) {
                         Text(food.emoji)
                             .font(.title2)
@@ -524,7 +337,15 @@ struct FoodManagementView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
                     }
+                    .padding()
+                    .cardStyle()
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button(role: .destructive) {
@@ -536,14 +357,19 @@ struct FoodManagementView: View {
                     .tint(.red)
                 }
             }
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
         }
+        .listStyle(.plain)
+        .background(Color(.systemGroupedBackground))
         .navigationTitle("Продукты")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: { showAddFood = true }) {
                     Image(systemName: "plus.circle.fill")
                         .font(.title3)
-                        .foregroundStyle(Color.foodRed)
+                        .foregroundStyle(.blue)
                 }
             }
         }
@@ -568,12 +394,17 @@ struct BodyAreaManagementView: View {
     var body: some View {
         List {
             ForEach(bodyAreas) { area in
-                NavigationLink(destination: BodyAreaEditView(bodyArea: area)) {
+                ZStack {
+                    NavigationLink(destination: BodyAreaEditView(bodyArea: area)) {
+                        EmptyView()
+                    }
+                    .opacity(0)
+                    
                     HStack(spacing: 12) {
                         Text(area.emoji)
                             .font(.title2)
                             .frame(width: 44, height: 44)
-                            .background(Color(.tertiarySystemBackground))
+                            .background(Color(.tertiarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                         
                         VStack(alignment: .leading, spacing: 4) {
@@ -596,7 +427,15 @@ struct BodyAreaManagementView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
                     }
+                    .padding()
+                    .cardStyle()
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button(role: .destructive) {
@@ -608,7 +447,13 @@ struct BodyAreaManagementView: View {
                     .tint(.red)
                 }
             }
+            .onMove(perform: moveArea)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
         }
+        .listStyle(.plain)
+        .background(Color(.systemGroupedBackground))
         .navigationTitle("Зоны тела")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -621,6 +466,16 @@ struct BodyAreaManagementView: View {
         .sheet(isPresented: $showAddArea) {
             CreateBodyAreaView()
         }
+        .environment(\.editMode, .constant(.active))
+    }
+    
+    private func moveArea(from source: IndexSet, to destination: Int) {
+        var reordered = bodyAreas
+        reordered.move(fromOffsets: source, toOffset: destination)
+        for (index, area) in reordered.enumerated() {
+            area.sortOrder = index
+        }
+        try? modelContext.save()
     }
 }
 
@@ -682,6 +537,10 @@ struct BodyAreaEditView: View {
     @State private var editIsSkin: Bool = false
     @State private var showDeleteConfirmation = false
     
+    private var hasChanges: Bool {
+        editName != bodyArea.name || editEmoji != bodyArea.emoji || editIsSkin != bodyArea.isSkinRelated
+    }
+    
     var body: some View {
         List {
             BodyAreaFields(name: $editName, emoji: $editEmoji, isSkinRelated: $editIsSkin)
@@ -711,16 +570,24 @@ struct BodyAreaEditView: View {
             }
         }
         .navigationTitle(bodyArea.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Сохранить") {
+                    if !editName.isEmpty { bodyArea.name = editName }
+                    if !editEmoji.isEmpty { bodyArea.emoji = editEmoji }
+                    bodyArea.isSkinRelated = editIsSkin
+                    try? modelContext.save()
+                    dismiss()
+                }
+                .fontWeight(.bold)
+                .disabled(!hasChanges || editName.isEmpty)
+            }
+        }
         .onAppear {
             editName = bodyArea.name
             editEmoji = bodyArea.emoji
             editIsSkin = bodyArea.isSkinRelated
-        }
-        .onDisappear {
-            if !editName.isEmpty { bodyArea.name = editName }
-            if !editEmoji.isEmpty { bodyArea.emoji = editEmoji }
-            bodyArea.isSkinRelated = editIsSkin
-            try? modelContext.save()
         }
         .alert("Удалить зону?", isPresented: $showDeleteConfirmation) {
             Button("Удалить", role: .destructive) {

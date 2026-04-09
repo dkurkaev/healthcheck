@@ -14,7 +14,20 @@ struct CreateFoodItemView: View {
     @State private var editIsFavorite: Bool = false
     @State private var showDeleteConfirmation = false
     
+    // Snapshot to detect changes in edit mode
+    @State private var originalName: String = ""
+    @State private var originalEmoji: String = ""
+    @State private var originalDangerLevel: Int = 1
+    @State private var originalIsFavorite: Bool = false
+    
     private var isNew: Bool { food == nil }
+    
+    private var hasChanges: Bool {
+        editName != originalName ||
+        editEmoji != originalEmoji ||
+        editDangerLevel != originalDangerLevel ||
+        editIsFavorite != originalIsFavorite
+    }
     
     var body: some View {
         if isNew {
@@ -29,9 +42,9 @@ struct CreateFoodItemView: View {
     private var editorContent: some View {
         List {
             FoodItemFields(
-                name: $editName, 
-                emoji: $editEmoji, 
-                dangerLevel: $editDangerLevel, 
+                name: $editName,
+                emoji: $editEmoji,
+                dangerLevel: $editDangerLevel,
                 isFavorite: $editIsFavorite
             )
             
@@ -58,18 +71,25 @@ struct CreateFoodItemView: View {
         .navigationTitle(isNew ? "Новый продукт" : (food?.name ?? "Правка"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button(isNew ? "Отмена" : "Готово") {
-                    dismiss()
-                }
-            }
             if isNew {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Отмена") { dismiss() }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Создать") {
                         saveFoodItem()
                     }
                     .fontWeight(.bold)
                     .disabled(editName.isEmpty)
+                }
+            } else {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Сохранить") {
+                        updateFoodItem()
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                    .disabled(!hasChanges || editName.isEmpty)
                 }
             }
         }
@@ -79,13 +99,13 @@ struct CreateFoodItemView: View {
                 editEmoji = f.emoji
                 editDangerLevel = f.dangerLevel
                 editIsFavorite = f.isFavorite
+                // Snapshot for change detection
+                originalName = f.name
+                originalEmoji = f.emoji
+                originalDangerLevel = f.dangerLevel
+                originalIsFavorite = f.isFavorite
             } else {
                 editEmoji = "🍎"
-            }
-        }
-        .onDisappear {
-            if !isNew {
-                updateFoodItem()
             }
         }
         .alert("Удалить продукт?", isPresented: $showDeleteConfirmation) {

@@ -8,14 +8,14 @@ struct AddFoodView: View {
     @Query(sort: \FoodItem.createdAt, order: .reverse)
     private var existingFoods: [FoodItem]
     
-    @State private var name = ""
-    @State private var emoji = "🍽"
-    @State private var dangerLevel = 1
-    @State private var isFavorite = false
     @State private var searchText = ""
-    @State private var selectedExisting: FoodItem?
+    @State private var showCreateNew = false
     
-    var filteredExisting: [FoodItem] {
+    var favorites: [FoodItem] {
+        existingFoods.filter { $0.isFavorite }
+    }
+    
+    var filteredSearch: [FoodItem] {
         if searchText.isEmpty { return [] }
         return existingFoods.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
@@ -23,18 +23,17 @@ struct AddFoodView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // Quick Search Existing
+                // Quick Search
                 Section {
                     HStack {
                         Image(systemName: "magnifyingglass")
                             .foregroundStyle(.secondary)
-                        TextField("Поиск существующих...", text: $searchText)
+                        TextField("Поиск продукта...", text: $searchText)
                     }
                     
-                    if !filteredExisting.isEmpty {
-                        ForEach(filteredExisting.prefix(5)) { item in
+                    if !filteredSearch.isEmpty {
+                        ForEach(filteredSearch.prefix(5)) { item in
                             Button(action: {
-                                selectedExisting = item
                                 logExistingFood(item)
                             }) {
                                 HStack {
@@ -57,21 +56,45 @@ struct AddFoodView: View {
                     Text("Быстрый выбор")
                 }
                 
-                // More compact Divider
-                HStack {
-                    VStack { Divider() }
-                    Text("или создать новый")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
-                    VStack { Divider() }
+                // Favorites tags
+                if !favorites.isEmpty && searchText.isEmpty {
+                    Section {
+                        FlowLayout(spacing: 8) {
+                            ForEach(favorites) { item in
+                                Button(action: { logExistingFood(item) }) {
+                                    HStack(spacing: 4) {
+                                        Text(item.emoji)
+                                        Text(item.name)
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color.dangerColor(item.dangerLevel).opacity(0.1))
+                                    .foregroundStyle(Color.dangerColor(item.dangerLevel))
+                                    .clipShape(Capsule())
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color.dangerColor(item.dangerLevel).opacity(0.3), lineWidth: 1)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    } header: {
+                        Text("Избранное")
+                    }
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                 
-                FoodItemFields(name: $name, emoji: $emoji, dangerLevel: $dangerLevel, isFavorite: $isFavorite)
+                // Create new
+                Section {
+                    Button(action: { showCreateNew = true }) {
+                        Label("Создать новый продукт", systemImage: "plus.circle.fill")
+                            .foregroundStyle(.blue)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .navigationTitle("Добавить еду")
             .navigationBarTitleDisplayMode(.inline)
@@ -79,8 +102,55 @@ struct AddFoodView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Отмена") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showCreateNew) {
+                CreateFoodItemInlineView(onSave: { dismiss() })
+            }
+        }
+    }
+    
+    private func logExistingFood(_ item: FoodItem) {
+        let entry = FoodEntry(foodItem: item)
+        modelContext.insert(entry)
+        try? modelContext.save()
+        dismiss()
+    }
+}
+
+// MARK: - Create Food Item Inline (with "Сохранить в ленту" toggle)
+struct CreateFoodItemInlineView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    
+    var onSave: (() -> Void)? = nil
+    
+    @State private var name = ""
+    @State private var emoji = "🍎"
+    @State private var dangerLevel = 1
+    @State private var isFavorite = false
+    @State private var saveToFeed = true
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                FoodItemFields(name: $name, emoji: $emoji, dangerLevel: $dangerLevel, isFavorite: $isFavorite)
+                
+                Section {
+                    Toggle("Сохранить в ленту еды", isOn: $saveToFeed)
+                } footer: {
+                    Text(saveToFeed
+                         ? "Продукт будет добавлен в справочник и записан в историю питания."
+                         : "Продукт будет сохранён только в справочник без записи в историю.")
+                }
+            }
+            .navigationTitle("Новый продукт")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Отмена") { dismiss() }
+                }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
+                    Button("Создать") {
                         saveFood()
                     }
                     .fontWeight(.bold)
@@ -99,17 +169,13 @@ struct AddFoodView: View {
         )
         modelContext.insert(food)
         
-        let entry = FoodEntry(foodItem: food)
-        modelContext.insert(entry)
+        if saveToFeed {
+            let entry = FoodEntry(foodItem: food)
+            modelContext.insert(entry)
+        }
         
         try? modelContext.save()
         dismiss()
-    }
-    
-    private func logExistingFood(_ item: FoodItem) {
-        let entry = FoodEntry(foodItem: item)
-        modelContext.insert(entry)
-        try? modelContext.save()
-        dismiss()
+        onSave?()
     }
 }
