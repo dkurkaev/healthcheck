@@ -9,8 +9,16 @@
 /* Begin PBXBuildFile section */
 		0361623A562A68D3AFAB5EAC /* MedicationTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B91A266B473FE4FA8BBC0382 /* MedicationTemplateView.swift */; };
 		0499E8C9C54FD41F5DCDC564 /* MedicationLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F007B90DF28D0B127A4AA2 /* MedicationLogView.swift */; };
-		05CA5CF9EA57DA99BBD32BD2 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3B0658D83D382643755BB9 /* Extensions.swift */; };
-		0AF083E26D3A7CDCF118ACB8 /* CreateMedicationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B6A2C7945BA4791770AC562 /* CreateMedicationView.swift */; };
+				05CA5CF9EA57DA99BBD32BD2 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3B0658D83D382643755BB9 /* Extensions.swift */; };
+		AAA000012A68D3AFAB5EAC01 /* MedicationListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00001473FE4FA8BBC0382 /* MedicationListView.swift */; };
+		BBB000092A68D3AFAB5EAC01 /* MedicationTemplateListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00009473FE4FA8BBC0382 /* MedicationTemplateListView.swift */; };
+		AAA000022A68D3AFAB5EAC01 /* MedicationEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00002473FE4FA8BBC0382 /* MedicationEditorView.swift */; };
+		AAA000032A68D3AFAB5EAC01 /* MedicationTemplateEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00003473FE4FA8BBC0382 /* MedicationTemplateEditorView.swift */; };
+		AAA000042A68D3AFAB5EAC01 /* FoodListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00004473FE4FA8BBC0382 /* FoodListView.swift */; };
+		AAA000052A68D3AFAB5EAC01 /* FoodItemEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00005473FE4FA8BBC0382 /* FoodItemEditorView.swift */; };
+		AAA000062A68D3AFAB5EAC01 /* BodyAreaListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00006473FE4FA8BBC0382 /* BodyAreaListView.swift */; };
+		AAA000072A68D3AFAB5EAC01 /* BodyAreaEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00007473FE4FA8BBC0382 /* BodyAreaEditorView.swift */; };
+		AAA000082A68D3AFAB5EAC01 /* DataManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00008473FE4FA8BBC0382 /* DataManagementView.swift */; };
 		12449CFD8650FE4A0C0B8109 /* MedicationTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6EDF6A7C6335A16F3B493E4 /* MedicationTemplate.swift */; };
 		18265BA620FF4AC2FA1EFDF8 /* BodyArea.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90BCBE939FA8D31DF1DA68FB /* BodyArea.swift */; };
 		1A9958ABA75C9E777EA56A33 /* BodyAreaRating.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05309A0ED5F724651CF28271 /* BodyAreaRating.swift */; };
@@ -24,8 +32,7 @@
 		6BE48B79E7A84A8E5BAB17C6 /* FoodItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A561E029D10714FD8407241 /* FoodItemRow.swift */; };
 		777F12A80D6471CA69E89881 /* HealthChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D4CA073ABB570301ECFD33 /* HealthChartView.swift */; };
 		80670DBC029CA0D69D33A9D7 /* QuickActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74542E36C8C1FE4BA873A77E /* QuickActionButton.swift */; };
-		82694976DA904831B3B7EC15 /* DataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0DB38971F1AAB4646C8F51 /* DataSeeder.swift */; };
-		964216401CB62D81462534FC /* CreateFoodItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47667109BF720E60DBAFB00D /* CreateFoodItemView.swift */; };
+				82694976DA904831B3B7EC15 /* DataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0DB38971F1AAB4646C8F51 /* DataSeeder.swift */; };
 		9DBAAB27021229E8320B8724 /* XLKit in Frameworks */ = {isa = PBXBuildFile; productRef = 28A75BB285AA58368C12D0B7 /* XLKit */; };
 		9E83BAC4141044257F2A4AA6 /* ApplyMedicationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3710168E92EBF3322CA844A /* ApplyMedicationView.swift */; };
 		A4FD50A6E924C5C034086DF9 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05F6EFC16279A592D859DDAD /* HomeView.swift */; };
@@ -47,14 +54,21 @@
 /* Begin PBXFileReference section */
 		01F007B90DF28D0B127A4AA2 /* MedicationLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationLogView.swift; sourceTree = "<group>"; };
 		05309A0ED5F724651CF28271 /* BodyAreaRating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAreaRating.swift; sourceTree = "<group>"; };
-		05F6EFC16279A592D859DDAD /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		0B6A2C7945BA4791770AC562 /* CreateMedicationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateMedicationView.swift; sourceTree = "<group>"; };
+				05F6EFC16279A592D859DDAD /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		BBB00001473FE4FA8BBC0382 /* MedicationListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationListView.swift; sourceTree = "<group>"; };
+		BBB00009473FE4FA8BBC0382 /* MedicationTemplateListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationTemplateListView.swift; sourceTree = "<group>"; };
+		BBB00002473FE4FA8BBC0382 /* MedicationEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationEditorView.swift; sourceTree = "<group>"; };
+		BBB00003473FE4FA8BBC0382 /* MedicationTemplateEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationTemplateEditorView.swift; sourceTree = "<group>"; };
+		BBB00004473FE4FA8BBC0382 /* FoodListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodListView.swift; sourceTree = "<group>"; };
+		BBB00005473FE4FA8BBC0382 /* FoodItemEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItemEditorView.swift; sourceTree = "<group>"; };
+		BBB00006473FE4FA8BBC0382 /* BodyAreaListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAreaListView.swift; sourceTree = "<group>"; };
+		BBB00007473FE4FA8BBC0382 /* BodyAreaEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAreaEditorView.swift; sourceTree = "<group>"; };
+		BBB00008473FE4FA8BBC0382 /* DataManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManagementView.swift; sourceTree = "<group>"; };
 		180F31E6A51A47E6AF7E23BF /* Healthcheck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Healthcheck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		29A0A1F20321A73C8A7380A4 /* StatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsView.swift; sourceTree = "<group>"; };
 		2E2FD15A12D802B8021F8846 /* AddFoodView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFoodView.swift; sourceTree = "<group>"; };
 		34638965B67EB4708217AD74 /* ExcelExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcelExportService.swift; sourceTree = "<group>"; };
-		3F2C5FE49DFF5537D5CE6B32 /* MedicationEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationEntry.swift; sourceTree = "<group>"; };
-		47667109BF720E60DBAFB00D /* CreateFoodItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFoodItemView.swift; sourceTree = "<group>"; };
+				3F2C5FE49DFF5537D5CE6B32 /* MedicationEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationEntry.swift; sourceTree = "<group>"; };
 		4BBAECEB17813F735996F34D /* AddMedicationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMedicationView.swift; sourceTree = "<group>"; };
 		510D14AC12E8D4159B25F7AE /* BodyAreasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAreasView.swift; sourceTree = "<group>"; };
 		5A561E029D10714FD8407241 /* FoodItemRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItemRow.swift; sourceTree = "<group>"; };
@@ -99,7 +113,6 @@
 			children = (
 				4BBAECEB17813F735996F34D /* AddMedicationView.swift */,
 				C3710168E92EBF3322CA844A /* ApplyMedicationView.swift */,
-				0B6A2C7945BA4791770AC562 /* CreateMedicationView.swift */,
 				01F007B90DF28D0B127A4AA2 /* MedicationLogView.swift */,
 				B91A266B473FE4FA8BBC0382 /* MedicationTemplateView.swift */,
 			);
@@ -162,7 +175,6 @@
 			isa = PBXGroup;
 			children = (
 				2E2FD15A12D802B8021F8846 /* AddFoodView.swift */,
-				47667109BF720E60DBAFB00D /* CreateFoodItemView.swift */,
 				5A561E029D10714FD8407241 /* FoodItemRow.swift */,
 				95420682C4B37C23F255403E /* FoodLogView.swift */,
 			);
@@ -220,9 +232,50 @@
 		D628A0401EA3AA5BF8853410 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				CCC00001D628A0401EA3AA5B /* Medication */,
+				CCC00002D628A0401EA3AA5B /* Food */,
+				CCC00003D628A0401EA3AA5B /* BodyArea */,
+				CCC00004D628A0401EA3AA5B /* Data */,
 				7BFFD5B0DD1755BCB1FF76D2 /* SettingsView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		CCC00001D628A0401EA3AA5B /* Medication */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00001473FE4FA8BBC0382 /* MedicationListView.swift */,
+				BBB00009473FE4FA8BBC0382 /* MedicationTemplateListView.swift */,
+				BBB00002473FE4FA8BBC0382 /* MedicationEditorView.swift */,
+				BBB00003473FE4FA8BBC0382 /* MedicationTemplateEditorView.swift */,
+			);
+			path = Medication;
+			sourceTree = "<group>";
+		};
+		CCC00002D628A0401EA3AA5B /* Food */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00004473FE4FA8BBC0382 /* FoodListView.swift */,
+				BBB00005473FE4FA8BBC0382 /* FoodItemEditorView.swift */,
+			);
+			path = Food;
+			sourceTree = "<group>";
+		};
+		CCC00003D628A0401EA3AA5B /* BodyArea */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00006473FE4FA8BBC0382 /* BodyAreaListView.swift */,
+				BBB00007473FE4FA8BBC0382 /* BodyAreaEditorView.swift */,
+			);
+			path = BodyArea;
+			sourceTree = "<group>";
+		};
+		CCC00004D628A0401EA3AA5B /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00008473FE4FA8BBC0382 /* DataManagementView.swift */,
+			);
+			path = Data;
 			sourceTree = "<group>";
 		};
 		DBA18FE680F36DA55423327E /* Models */ = {
@@ -312,8 +365,15 @@
 				CD22A218C8283F0A1945BC83 /* BodyAreasView.swift in Sources */,
 				6918D19E5EFF49585A1C89EF /* ContentView.swift in Sources */,
 				E54F13AEEAD957A1BCF1FF1A /* CorrelationView.swift in Sources */,
-				964216401CB62D81462534FC /* CreateFoodItemView.swift in Sources */,
-				0AF083E26D3A7CDCF118ACB8 /* CreateMedicationView.swift in Sources */,
+				AAA000012A68D3AFAB5EAC01 /* MedicationListView.swift in Sources */,
+				BBB000092A68D3AFAB5EAC01 /* MedicationTemplateListView.swift in Sources */,
+				AAA000022A68D3AFAB5EAC01 /* MedicationEditorView.swift in Sources */,
+				AAA000032A68D3AFAB5EAC01 /* MedicationTemplateEditorView.swift in Sources */,
+				AAA000042A68D3AFAB5EAC01 /* FoodListView.swift in Sources */,
+				AAA000052A68D3AFAB5EAC01 /* FoodItemEditorView.swift in Sources */,
+				AAA000062A68D3AFAB5EAC01 /* BodyAreaListView.swift in Sources */,
+				AAA000072A68D3AFAB5EAC01 /* BodyAreaEditorView.swift in Sources */,
+				AAA000082A68D3AFAB5EAC01 /* DataManagementView.swift in Sources */,
 				82694976DA904831B3B7EC15 /* DataSeeder.swift in Sources */,
 				D24F61294F107143257BE393 /* ExcelExportService.swift in Sources */,
 				05CA5CF9EA57DA99BBD32BD2 /* Extensions.swift in Sources */,

@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-struct CreateFoodItemView: View {
+struct FoodItemEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
@@ -49,69 +49,39 @@ struct CreateFoodItemView: View {
             )
             
             if let food = food {
-                StandardHeader(title: "Статистика")
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
-                
-                HStack {
-                    Text("Записей")
-                    Spacer()
-                    Text("\(food.entries.count)")
-                        .foregroundStyle(.secondary)
-                }
-                .padding()
-                .cardStyle()
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
-                
-                Button(role: .destructive) {
-                    showDeleteConfirmation = true
-                } label: {
-                    HStack {
+                Section {
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
                         Label("Удалить продукт", systemImage: "trash.fill")
                             .foregroundStyle(.red)
-                        Spacer()
                     }
-                    .padding()
-                    .cardStyle()
                 }
-                .buttonStyle(.plain)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 20, leading: .appHorizontalPadding, bottom: 40, trailing: .appHorizontalPadding))
             }
         }
-        .listStyle(.plain)
-        .background(Color(.systemGroupedBackground))
+        .listStyle(.insetGrouped)
+        .navigationTitle(isNew ? "Новый продукт" : (food?.name ?? "Правка"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text(isNew ? "Новый продукт" : (food?.name ?? "Правка"))
-                    .font(.headline)
-            }
-            
             if isNew {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Отмена") { dismiss() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Создать") {
+            }
+            
+            ToolbarItem(placement: .confirmationAction) {
+                let canSave = !editName.isEmpty && (isNew || hasChanges)
+                
+                Button("Готово") {
+                    if isNew {
                         saveFoodItem()
-                    }
-                    .fontWeight(.bold)
-                    .disabled(editName.isEmpty)
-                }
-            } else {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
+                    } else {
                         updateFoodItem()
                         dismiss()
                     }
-                    .fontWeight(.bold)
-                    .disabled(!hasChanges || editName.isEmpty)
                 }
+                .fontWeight(.bold)
+                .disabled(!canSave)
             }
         }
         .onAppear {
@@ -120,7 +90,6 @@ struct CreateFoodItemView: View {
                 editEmoji = f.emoji
                 editDangerLevel = f.dangerLevel
                 editIsFavorite = f.isFavorite
-                // Snapshot for change detection
                 originalName = f.name
                 originalEmoji = f.emoji
                 originalDangerLevel = f.dangerLevel
@@ -162,5 +131,37 @@ struct CreateFoodItemView: View {
         f.dangerLevel = editDangerLevel
         f.isFavorite = editIsFavorite
         try? modelContext.save()
+    }
+}
+
+// MARK: - Food Item Fields Component
+struct FoodItemFields: View {
+    @Binding var name: String
+    @Binding var emoji: String
+    @Binding var dangerLevel: Int
+    @Binding var isFavorite: Bool
+    
+    var body: some View {
+        Section("Основная информация") {
+            HStack(spacing: 16) {
+                EmojiPickerButton(emoji: $emoji)
+                
+                TextField("Название продукта", text: $name)
+                    .font(.headline)
+            }
+            
+            Toggle("Избранное", isOn: $isFavorite)
+        }
+        
+        Section("Параметры") {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Уровень опасности")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                
+                DangerLevelPicker(selection: $dangerLevel)
+            }
+            .padding(.vertical, 4)
+        }
     }
 }

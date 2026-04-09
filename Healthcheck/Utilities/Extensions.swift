@@ -196,8 +196,10 @@ struct StandardHeader: View {
         Text(title)
             .font(.subheadline)
             .fontWeight(.bold)
-            .foregroundStyle(.primary)
-            .padding(.horizontal, .appHorizontalPadding)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, .appHorizontalPadding + 8)
+            .padding(.top, 18)
+            .padding(.bottom, 2)
     }
 }
 
@@ -227,125 +229,49 @@ struct ActionButtonRow: View {
     }
 }
 
-// MARK: - Shared Dictionary Fields
-struct FoodItemFields: View {
-    @Binding var name: String
-    @Binding var emoji: String
-    @Binding var dangerLevel: Int
-    @Binding var isFavorite: Bool
+// MARK: - Flow Layout for List
+struct FlowLayoutList: Layout {
+    var spacing: CGFloat = 6
     
-    var body: some View {
-        Group {
-            StandardHeader(title: "Основная информация")
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
-            
-            HStack(spacing: 16) {
-                EmojiPickerButton(emoji: $emoji)
-                
-                TextField("Название продукта", text: $name)
-                    .font(.headline)
-            }
-            .padding(.vertical, 4)
-            .padding()
-            .cardStyle()
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
-            
-            HStack {
-                Text("Избранное")
-                Spacer()
-                Toggle("", isOn: $isFavorite).labelsHidden()
-            }
-            .padding()
-            .cardStyle()
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
-            
-            StandardHeader(title: "Параметры")
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
-            
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Уровень опасности")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                
-                DangerLevelPicker(selection: $dangerLevel)
-            }
-            .padding(.vertical, 4)
-            .padding()
-            .cardStyle()
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 16, trailing: .appHorizontalPadding))
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = computeLayout(proposal: proposal, subviews: subviews)
+        return result.size
+    }
+    
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = computeLayout(proposal: proposal, subviews: subviews)
+        for (index, position) in result.positions.enumerated() {
+            subviews[index].place(at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y), proposal: .unspecified)
         }
+    }
+    
+    private func computeLayout(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, positions: [CGPoint]) {
+        let maxWidth = proposal.width ?? .infinity
+        var positions: [CGPoint] = []
+        var currentX: CGFloat = 0
+        var currentY: CGFloat = 0
+        var lineHeight: CGFloat = 0
+        var maxX: CGFloat = 0
+        
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if currentX + size.width > maxWidth && currentX > 0 {
+                currentX = 0
+                currentY += lineHeight + spacing
+                lineHeight = 0
+            }
+            positions.append(CGPoint(x: currentX, y: currentY))
+            lineHeight = max(lineHeight, size.height)
+            currentX += size.width + spacing
+            maxX = max(maxX, currentX)
+        }
+        
+        return (CGSize(width: maxX, height: currentY + lineHeight), positions)
     }
 }
 
-struct MedicationFields: View {
-    @Binding var name: String
-    @Binding var emoji: String
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            EmojiPickerButton(emoji: $emoji)
-            
-            TextField("Название лекарства", text: $name)
-                .font(.headline)
-        }
-        .padding(.vertical, 4)
-    }
-}
 
-struct BodyAreaFields: View {
-    @Binding var name: String
-    @Binding var emoji: String
-    @Binding var isSkinRelated: Bool
-    
-    var body: some View {
-        Group {
-            StandardHeader(title: "Основная информация")
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
-            
-            HStack(spacing: 16) {
-                EmojiPickerButton(emoji: $emoji)
-                
-                TextField("Название зоны", text: $name)
-                    .font(.headline)
-            }
-            .padding(.vertical, 4)
-            .padding()
-            .cardStyle()
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
-            
-            StandardHeader(title: "Параметры")
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
-            
-            HStack {
-                Text("Связана с кожей")
-                Spacer()
-                Toggle("", isOn: $isSkinRelated).labelsHidden()
-            }
-            .padding()
-            .cardStyle()
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 16, trailing: .appHorizontalPadding))
-        }
-    }
-}
-
+// MARK: - Shared Dictionary Components
 struct DangerLevelPicker: View {
     @Binding var selection: Int
     
@@ -501,8 +427,12 @@ struct FoodEntryDetailView: View {
         .navigationTitle("Детали записи")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Готово") { dismiss() }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(Color.blue)
+                }
             }
         }
     }
@@ -599,6 +529,7 @@ struct MedicationEntryDetailView: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Готово") { dismiss() }
+                    .fontWeight(.bold)
             }
         }
     }
@@ -759,12 +690,15 @@ struct EditRatingViewFromHistory: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Отмена") { dismiss() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
                         save()
                         dismiss()
+                    }) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(Color.blue)
                     }
-                    .fontWeight(.bold)
                 }
             }
         }

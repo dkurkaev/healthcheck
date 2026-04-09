@@ -106,11 +106,11 @@ struct MedicationTemplateView: View {
                     Button("Отмена") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
-                        saveTemplate()
-                    }
-                    .fontWeight(.bold)
-                    .disabled(name.isEmpty || selectedMedication == nil || selectedBodyAreas.isEmpty)
+                    let canSave = !name.isEmpty && selectedMedication != nil && !selectedBodyAreas.isEmpty
+                    
+                    Button("Готово", action: saveTemplate)
+                        .fontWeight(.bold)
+                        .disabled(!canSave)
                 }
             }
         }

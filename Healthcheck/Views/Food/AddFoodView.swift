@@ -150,11 +150,9 @@ struct CreateFoodItemInlineView: View {
                     Button("Отмена") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Создать") {
-                        saveFood()
-                    }
-                    .fontWeight(.bold)
-                    .disabled(name.isEmpty)
+                    Button("Сохранить", action: saveFood)
+                        .fontWeight(.bold)
+                        .disabled(name.isEmpty)
                 }
             }
         }

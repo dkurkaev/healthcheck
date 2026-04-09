@@ -5,12 +5,12 @@ import SwiftData
 /// Ensures consistent card-based UI with proper spacing and interaction logic.
 struct MedicationTemplateList: View {
     let templates: [MedicationTemplate]?
-    let tempTemplates: [CreateMedicationView.TempTemplate]?
+    let tempTemplates: [MedicationEditorView.TempTemplate]?
     let onEditSaved: (MedicationTemplate) -> Void
-    let onEditTemp: (CreateMedicationView.TempTemplate) -> Void
+    let onEditTemp: (MedicationEditorView.TempTemplate) -> Void
     let onAdd: () -> Void
     let onDeleteSaved: (MedicationTemplate) -> Void
-    let onDeleteTemp: (CreateMedicationView.TempTemplate) -> Void
+    let onDeleteTemp: (MedicationEditorView.TempTemplate) -> Void
     
     @Query(sort: \BodyArea.sortOrder)
     private var bodyAreas: [BodyArea]

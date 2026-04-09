@@ -151,11 +151,11 @@ struct ApplyMedicationView: View {
                     Button("Отмена") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
-                        saveEntry()
-                    }
-                    .fontWeight(.bold)
-                    .disabled(selectedMedication == nil || selectedBodyAreas.isEmpty)
+                    let canSave = selectedMedication != nil && !selectedBodyAreas.isEmpty
+                    
+                    Button("Готово", action: saveEntry)
+                        .fontWeight(.bold)
+                        .disabled(!canSave)
                 }
             }
             .overlay {

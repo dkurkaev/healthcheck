@@ -48,11 +48,9 @@ struct AddMedicationView: View {
                     Button("Отмена") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
-                        saveMedication()
-                    }
-                    .fontWeight(.bold)
-                    .disabled(name.isEmpty)
+                    Button("Сохранить", action: saveMedication)
+                        .fontWeight(.bold)
+                        .disabled(name.isEmpty)
                 }
             }
         }

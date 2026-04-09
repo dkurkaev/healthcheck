@@ -59,11 +59,12 @@ struct RateHealthView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Отмена") { dismiss() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
-                        saveRatings()
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: saveRatings) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(Color.blue)
                     }
-                    .fontWeight(.bold)
                 }
             }
             .overlay {
