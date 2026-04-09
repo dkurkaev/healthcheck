@@ -558,6 +558,9 @@ struct BodyAreaEditView: View {
                     Text("\(bodyArea.medicationTemplates.count)")
                         .foregroundStyle(.secondary)
                 }
+            } header: {
+                StandardHeader(title: "Статистика")
+                    .padding(.leading, -20)
             }
             
             Section {

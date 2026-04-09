@@ -14,9 +14,7 @@ struct CreateMedicationView: View {
     @State private var editEmoji: String = ""
     @State private var tempTemplates: [TempTemplate] = []
     
-    // Better Sheet Management
     @State private var activeSheet: ActiveTemplateSheet?
-    
     @State private var showDeleteConfirmation = false
     
     private var isNew: Bool { medication == nil }
@@ -42,142 +40,31 @@ struct CreateMedicationView: View {
     }
     
     var body: some View {
-        if isNew {
-            NavigationStack {
+        Group {
+            if isNew {
+                NavigationStack {
+                    editorContent
+                }
+            } else {
                 editorContent
             }
-        } else {
-            editorContent
         }
     }
     
     private var editorContent: some View {
         List {
-            // Medication Fields Section
-            VStack(alignment: .leading, spacing: 8) {
-                Text("ОСНОВНАЯ ИНФОРМАЦИЯ")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                
-                MedicationFields(name: $editName, emoji: $editEmoji)
-                    .padding()
-                    .cardStyle()
-            }
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 12, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
-            
-            if let med = medication {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("СТАТИСТИКА")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    
-                    HStack {
-                        Text("Применений")
-                        Spacer()
-                        Text("\(med.entries.count)")
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding()
-                    .cardStyle()
-                }
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 8, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
-            }
-            
-            // Templates Header
-            Text("ШАБЛОНЫ ПРИМЕНЕНИЯ")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 16, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
-            
-            // Templates Cards
-            if isNew {
-                ForEach(tempTemplates) { template in
-                    Button(action: { activeSheet = .editTemp(template) }) {
-                        templateRow(name: template.name, areaIDs: template.bodyAreaIDs)
-                            .padding()
-                            .cardStyle()
-                    }
-                    .buttonStyle(.plain)
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            tempTemplates.removeAll { $0.id == template.id }
-                        } label: { Label("Удалить", systemImage: "trash") }
-                        .tint(.red)
-                    }
-                }
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 4, leading: .appHorizontalPadding, bottom: 4, trailing: .appHorizontalPadding))
-            } else if let med = medication {
-                ForEach(med.templates) { template in
-                    Button(action: { activeSheet = .editSaved(template) }) {
-                        templateRow(name: template.name, areaIDs: Set(template.bodyAreas.map(\.id)))
-                            .padding()
-                            .cardStyle()
-                    }
-                    .buttonStyle(.plain)
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            modelContext.delete(template)
-                            try? modelContext.save()
-                        } label: { Label("Удалить", systemImage: "trash") }
-                        .tint(.red)
-                    }
-                }
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 4, leading: .appHorizontalPadding, bottom: 4, trailing: .appHorizontalPadding))
-            }
-            
-            // Add Template Button - Standardised Row in a Card container to avoid sticking
-            Section {
-                ActionButtonRow(title: "Добавить шаблон", color: .medicationBlue) {
-                    activeSheet = .new
-                }
-                .padding()
-                .cardStyle()
-            }
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 12, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
-            
-            // Footer Info
-            Text("Шаблоны связывают лекарство с зонами тела для быстрого применения")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 8, leading: .appHorizontalPadding, bottom: 20, trailing: .appHorizontalPadding))
-
-            if !isNew {
-                Button(role: .destructive) {
-                    showDeleteConfirmation = true
-                } label: {
-                    HStack {
-                        Label("Удалить лекарство", systemImage: "trash.fill")
-                            .foregroundStyle(.red)
-                        Spacer()
-                    }
-                    .padding()
-                    .cardStyle()
-                }
-                .buttonStyle(.plain)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 20, leading: .appHorizontalPadding, bottom: 40, trailing: .appHorizontalPadding))
-            }
+            mainInfoSection
+            templatesSection
+            actionsSection
         }
         .listStyle(.plain)
         .background(Color(.systemGroupedBackground))
-        .navigationTitle(isNew ? "Новое лекарство" : (medication?.name ?? "Правка"))
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text(isNew ? "Новое лекарство" : (medication?.name ?? "Правка"))
+                    .font(.headline)
+            }
+            
             if isNew {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Отмена") { dismiss() }
@@ -238,36 +125,147 @@ struct CreateMedicationView: View {
         }
     }
     
-    private func templateRow(name: String, areaIDs: Set<UUID>) -> some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(name)
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
-                
-                let areas = bodyAreas.filter { areaIDs.contains($0.id) }
-                if !areas.isEmpty {
-                    FlowLayoutList(spacing: 6) {
-                        ForEach(areas) { area in
-                            HStack(spacing: 4) {
-                                Text(area.emoji)
-                                Text(area.name)
+    // MARK: - Sub-views (Required for compiler performance)
+    
+    @ViewBuilder
+    private var mainInfoSection: some View {
+        // Headers are now DIRECT elements of the List for color consistency
+        StandardHeader(title: "Основная информация")
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
+        
+        MedicationFields(name: $editName, emoji: $editEmoji)
+            .padding()
+            .cardStyle()
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
+        
+        if let med = medication {
+            StandardHeader(title: "Статистика")
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
+            
+            HStack {
+                Text("Применений")
+                Spacer()
+                Text("\(med.entries.count)")
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .cardStyle()
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
+        }
+    }
+    
+    @ViewBuilder
+    private var templatesSection: some View {
+        StandardHeader(title: "Шаблоны применения")
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 20, leading: 0, bottom: 8, trailing: 0))
+        
+        if isNew {
+            ForEach(tempTemplates) { template in
+                templateCard(name: template.name, areaIDs: template.bodyAreaIDs) {
+                    activeSheet = .editTemp(template)
+                } deleteAction: {
+                    tempTemplates.removeAll { $0.id == template.id }
+                }
+            }
+        } else if let med = medication {
+            ForEach(med.templates) { template in
+                templateCard(name: template.name, areaIDs: Set(template.bodyAreas.map(\.id))) {
+                    activeSheet = .editSaved(template)
+                } deleteAction: {
+                    modelContext.delete(template)
+                    try? modelContext.save()
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var actionsSection: some View {
+        ActionButtonRow(title: "Добавить шаблон", color: .medicationBlue) {
+            activeSheet = .new
+        }
+        .padding()
+        .cardStyle()
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 8, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
+        
+        Text("Шаблоны связывают лекарство с зонами тела для быстрого применения")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 4, leading: .appHorizontalPadding, bottom: 20, trailing: .appHorizontalPadding))
+
+        if !isNew {
+            Button(role: .destructive) {
+                showDeleteConfirmation = true
+            } label: {
+                HStack {
+                    Label("Удалить лекарство", systemImage: "trash.fill")
+                        .foregroundStyle(.red)
+                    Spacer()
+                }
+                .padding()
+                .cardStyle()
+            }
+            .buttonStyle(.plain)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 20, leading: .appHorizontalPadding, bottom: 40, trailing: .appHorizontalPadding))
+        }
+    }
+    
+    private func templateCard(name: String, areaIDs: Set<UUID>, action: @escaping () -> Void, deleteAction: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(name)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    
+                    let areas = bodyAreas.filter { areaIDs.contains($0.id) }
+                    if !areas.isEmpty {
+                        FlowLayoutList(spacing: 6) {
+                            ForEach(areas) { area in
+                                HStack(spacing: 4) {
+                                    Text(area.emoji)
+                                    Text(area.name)
+                                }
+                                .font(.caption2)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Color.medicationBlue.opacity(0.12))
+                                .foregroundStyle(Color.medicationBlue)
+                                .clipShape(Capsule())
                             }
-                            .font(.caption2)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(Color.medicationBlue.opacity(0.12))
-                            .foregroundStyle(Color.medicationBlue)
-                            .clipShape(Capsule())
                         }
                     }
                 }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
             }
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+            .padding()
+            .cardStyle()
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 4, leading: .appHorizontalPadding, bottom: 4, trailing: .appHorizontalPadding))
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive) { deleteAction() } label: { Label("Удалить", systemImage: "trash") }
         }
     }
     
@@ -308,7 +306,7 @@ struct CreateMedicationView: View {
     }
 }
 
-// MARK: - Dedicated Template Editor Sheet to solve state bugs
+// MARK: - Dedicated Template Editor Sheet
 struct TemplateEditorSheet: View {
     let mode: CreateMedicationView.ActiveTemplateSheet
     let bodyAreas: [BodyArea]
@@ -322,9 +320,12 @@ struct TemplateEditorSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Название шаблона") {
+                Section {
                     TextField("Например: На всю кожу", text: $name)
                         .font(.headline)
+                } header: {
+                    StandardHeader(title: "Название шаблона")
+                        .padding(.leading, -20)
                 }
                 
                 Section {
@@ -359,7 +360,10 @@ struct TemplateEditorSheet: View {
                         }
                     }
                     .padding(.vertical, 8)
-                } header: { Text("Зоны применения") }
+                } header: {
+                    StandardHeader(title: "Зоны применения")
+                        .padding(.leading, -20)
+                }
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
@@ -399,8 +403,7 @@ struct TemplateEditorSheet: View {
     
     private func setup() {
         switch mode {
-        case .new:
-            break
+        case .new: break
         case .editSaved(let t):
             name = t.name
             selectedBodyAreas = Set(t.bodyAreas.map(\.id))

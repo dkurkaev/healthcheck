@@ -189,6 +189,18 @@ struct LargeSelectableTile: View {
     }
 }
 
+struct StandardHeader: View {
+    let title: String
+    
+    var body: some View {
+        Text(title)
+            .font(.subheadline)
+            .fontWeight(.bold)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, .appHorizontalPadding)
+    }
+}
+
 struct ActionButtonRow: View {
     let title: String
     let icon: String
@@ -224,32 +236,53 @@ struct FoodItemFields: View {
     
     var body: some View {
         Group {
-            Section {
-                HStack(spacing: 16) {
-                    EmojiPickerButton(emoji: $emoji)
-                    
-                    TextField("Название продукта", text: $name)
-                        .font(.headline)
-                }
-                .padding(.vertical, 4)
-                
-                Toggle("Избранное", isOn: $isFavorite)
-            } header: {
-                Text("Основная информация")
-            }
+            StandardHeader(title: "Основная информация")
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
             
-            Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Уровень опасности")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    
-                    DangerLevelPicker(selection: $dangerLevel)
-                }
-                .padding(.vertical, 4)
-            } header: {
-                Text("Параметры")
+            HStack(spacing: 16) {
+                EmojiPickerButton(emoji: $emoji)
+                
+                TextField("Название продукта", text: $name)
+                    .font(.headline)
             }
+            .padding(.vertical, 4)
+            .padding()
+            .cardStyle()
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
+            
+            HStack {
+                Text("Избранное")
+                Spacer()
+                Toggle("", isOn: $isFavorite).labelsHidden()
+            }
+            .padding()
+            .cardStyle()
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
+            
+            StandardHeader(title: "Параметры")
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
+            
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Уровень опасности")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                
+                DangerLevelPicker(selection: $dangerLevel)
+            }
+            .padding(.vertical, 4)
+            .padding()
+            .cardStyle()
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 16, trailing: .appHorizontalPadding))
         }
     }
 }
@@ -276,23 +309,39 @@ struct BodyAreaFields: View {
     
     var body: some View {
         Group {
-            Section {
-                HStack(spacing: 16) {
-                    EmojiPickerButton(emoji: $emoji)
-                    
-                    TextField("Название зоны", text: $name)
-                        .font(.headline)
-                }
-                .padding(.vertical, 4)
-            } header: {
-                Text("Основная информация")
-            }
+            StandardHeader(title: "Основная информация")
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
             
-            Section {
-                Toggle("Связана с кожей", isOn: $isSkinRelated)
-            } header: {
-                Text("Параметры")
+            HStack(spacing: 16) {
+                EmojiPickerButton(emoji: $emoji)
+                
+                TextField("Название зоны", text: $name)
+                    .font(.headline)
             }
+            .padding(.vertical, 4)
+            .padding()
+            .cardStyle()
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
+            
+            StandardHeader(title: "Параметры")
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
+            
+            HStack {
+                Text("Связана с кожей")
+                Spacer()
+                Toggle("", isOn: $isSkinRelated).labelsHidden()
+            }
+            .padding()
+            .cardStyle()
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 16, trailing: .appHorizontalPadding))
         }
     }
 }

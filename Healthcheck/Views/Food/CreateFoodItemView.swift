@@ -5,7 +5,6 @@ struct CreateFoodItemView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
-    // If nil, we are creating a new item
     var food: FoodItem?
     
     @State private var editName: String = ""
@@ -14,7 +13,6 @@ struct CreateFoodItemView: View {
     @State private var editIsFavorite: Bool = false
     @State private var showDeleteConfirmation = false
     
-    // Snapshot to detect changes in edit mode
     @State private var originalName: String = ""
     @State private var originalEmoji: String = ""
     @State private var originalDangerLevel: Int = 1
@@ -30,12 +28,14 @@ struct CreateFoodItemView: View {
     }
     
     var body: some View {
-        if isNew {
-            NavigationStack {
+        Group {
+            if isNew {
+                NavigationStack {
+                    editorContent
+                }
+            } else {
                 editorContent
             }
-        } else {
-            editorContent
         }
     }
     
@@ -49,28 +49,49 @@ struct CreateFoodItemView: View {
             )
             
             if let food = food {
-                Section {
-                    HStack {
-                        Text("Записей")
-                        Spacer()
-                        Text("\(food.entries.count)")
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                StandardHeader(title: "Статистика")
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
                 
-                Section {
-                    Button(role: .destructive) {
-                        showDeleteConfirmation = true
-                    } label: {
+                HStack {
+                    Text("Записей")
+                    Spacer()
+                    Text("\(food.entries.count)")
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+                .cardStyle()
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 8, trailing: .appHorizontalPadding))
+                
+                Button(role: .destructive) {
+                    showDeleteConfirmation = true
+                } label: {
+                    HStack {
                         Label("Удалить продукт", systemImage: "trash.fill")
                             .foregroundStyle(.red)
+                        Spacer()
                     }
+                    .padding()
+                    .cardStyle()
                 }
+                .buttonStyle(.plain)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 20, leading: .appHorizontalPadding, bottom: 40, trailing: .appHorizontalPadding))
             }
         }
-        .navigationTitle(isNew ? "Новый продукт" : (food?.name ?? "Правка"))
+        .listStyle(.plain)
+        .background(Color(.systemGroupedBackground))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text(isNew ? "Новый продукт" : (food?.name ?? "Правка"))
+                    .font(.headline)
+            }
+            
             if isNew {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Отмена") { dismiss() }
