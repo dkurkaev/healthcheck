@@ -69,6 +69,8 @@ struct MedicationTemplateListView: View {
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
             .padding(.vertical, 4)
         }
         .buttonStyle(.plain)
