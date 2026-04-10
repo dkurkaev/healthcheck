@@ -19,13 +19,13 @@ struct MedicationEditorView: View {
     
     private var isNew: Bool { medication == nil }
     
-    struct TempTemplate: Identifiable, Equatable {
+    struct TempTemplate: Identifiable, Equatable, Hashable {
         let id = UUID()
         var name: String
         var bodyAreaIDs: Set<UUID>
     }
     
-    enum ActiveTemplateSheet: Identifiable {
+    enum ActiveTemplateSheet: Identifiable, Hashable {
         case new
         case editSaved(MedicationTemplate)
         case editTemp(TempTemplate)
@@ -70,7 +70,7 @@ struct MedicationEditorView: View {
                 let hasChanges = isNew || medication?.name != editName || medication?.emoji != editEmoji
                 let canSave = !editName.isEmpty && hasChanges
                 
-                Button("Готово") {
+                Button("Сохранить") {
                     if isNew {
                         saveNewMedication()
                     } else {
@@ -102,7 +102,7 @@ struct MedicationEditorView: View {
         } message: {
             Text("Лекарство \"\(editName)\" и все связанные шаблоны/записи будут удалены.")
         }
-        .sheet(item: $activeSheet) { sheet in
+        .navigationDestination(item: $activeSheet) { sheet in
             MedicationTemplateEditorView(
                 mode: sheet,
                 bodyAreas: bodyAreas,

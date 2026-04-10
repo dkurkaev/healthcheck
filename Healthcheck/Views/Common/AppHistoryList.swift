@@ -62,6 +62,7 @@ struct AppHistoryList<T: DeletableHistoryItem, Content: View>: View {
             ForEach(displayList, id: \.stableID) { item in
                 content(item)
                     .padding()
+                    .contentShape(Rectangle())
                     .listRowInsets(EdgeInsets(top: 6, leading: .appHorizontalPadding, bottom: 6, trailing: .appHorizontalPadding))
                     .listRowBackground(
                         RoundedRectangle(cornerRadius: 16)

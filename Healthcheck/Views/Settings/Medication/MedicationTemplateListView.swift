@@ -74,6 +74,7 @@ struct MedicationTemplateListView: View {
                     .foregroundStyle(.tertiary)
             }
             .padding(.vertical, 4)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .swipeActions(edge: .trailing) {

@@ -2,12 +2,12 @@ import Foundation
 import SwiftData
 
 @Model
-final class BodyArea {
+final class BodyArea: EditableListItem {
     var id: UUID
     var name: String
     var emoji: String
     var isSkinRelated: Bool
-    var sortOrder: Int
+    var sortOrder: Int?
     var createdAt: Date
     
     @Relationship(deleteRule: .cascade, inverse: \BodyAreaRating.bodyArea)
@@ -23,7 +23,7 @@ final class BodyArea {
         name: String,
         emoji: String,
         isSkinRelated: Bool = false,
-        sortOrder: Int = 0
+        sortOrder: Int? = 0
     ) {
         self.id = UUID()
         self.name = name
@@ -35,6 +35,10 @@ final class BodyArea {
         self.medicationTemplates = []
         self.medicationEntries = []
     }
+    
+    func delete(from context: ModelContext) { context.delete(self) }
+    
+    var stableID: AnyHashable { id }
     
     var latestRating: BodyAreaRating? {
         ratings.sorted { $0.timestamp > $1.timestamp }.first

@@ -12,37 +12,43 @@ struct MedicationTemplateEditorView: View {
     @State private var selectedBodyAreas: Set<UUID> = []
     
     var body: some View {
-        NavigationStack {
-            List {
-                Section("Название шаблона") {
-                    TextField("Например: На всю кожу", text: $name)
-                        .font(.headline)
-                }
-                
-                Section("Зоны применения") {
-                    BodyAreaSelector(bodyAreas: bodyAreas, selectedBodyAreas: $selectedBodyAreas)
-                }
+        List {
+            Section("Название шаблона") {
+                TextField("Например: На всю кожу", text: $name)
+                    .font(.headline)
             }
-            .listStyle(.insetGrouped)
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { 
-                    Button("Отмена") { dismiss() } 
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    let canSave = !name.isEmpty && !selectedBodyAreas.isEmpty
-                    
-                    Button("Готово") {
-                        handleSave()
-                        dismiss()
-                    }
-                    .fontWeight(.bold)
-                    .disabled(!canSave)
-                }
+            
+            Section("Зоны применения") {
+                BodyAreaSelector(bodyAreas: bodyAreas, selectedBodyAreas: $selectedBodyAreas)
             }
-            .onAppear(perform: setup)
         }
+        .listStyle(.insetGrouped)
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                let isNew = { if case .new = mode { return true }; return false }()
+                let hasChanges: Bool = {
+                    switch mode {
+                    case .new: return true
+                    case .editSaved(let t):
+                        return name != t.name || selectedBodyAreas != Set(t.bodyAreas.map(\.id))
+                    case .editTemp(let t):
+                        return name != t.name || selectedBodyAreas != t.bodyAreaIDs
+                    }
+                }()
+                
+                let canSave = !name.isEmpty && !selectedBodyAreas.isEmpty && (isNew || hasChanges)
+                
+                Button("Сохранить") {
+                    handleSave()
+                    dismiss()
+                }
+                .fontWeight(.bold)
+                .disabled(!canSave)
+            }
+        }
+        .onAppear(perform: setup)
     }
     
     private var title: String {

@@ -65,7 +65,7 @@ struct BodyAreaEditorView: View {
                 let hasChanges = isNew || area?.name != name || area?.emoji != emoji
                 let canSave = !name.isEmpty && hasChanges
                 
-                Button("Готово") {
+                Button("Сохранить") {
                     save()
                     dismiss()
                 }

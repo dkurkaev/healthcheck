@@ -48,7 +48,7 @@ struct FoodItemEditorView: View {
                 isFavorite: $editIsFavorite
             )
             
-            if let food = food {
+            if food != nil {
                 Section {
                     Button(role: .destructive) {
                         showDeleteConfirmation = true
@@ -72,7 +72,7 @@ struct FoodItemEditorView: View {
             ToolbarItem(placement: .confirmationAction) {
                 let canSave = !editName.isEmpty && (isNew || hasChanges)
                 
-                Button("Готово") {
+                Button("Сохранить") {
                     if isNew {
                         saveFoodItem()
                     } else {
