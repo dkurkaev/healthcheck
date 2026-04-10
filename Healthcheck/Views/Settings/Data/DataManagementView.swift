@@ -3,7 +3,6 @@ import SwiftData
 
 struct DataManagementView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
     
     @Query private var medications: [Medication]
     @Query private var medicationEntries: [MedicationEntry]
@@ -16,57 +15,16 @@ struct DataManagementView: View {
     
     var body: some View {
         List {
-            Section {
-                StandardHeader(title: "Статистика базы")
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
-                
-                VStack(spacing: 0) {
-                    statRow(title: "Лекарства", count: medications.count, icon: "pills.fill", color: .blue)
-                    Divider().padding(.leading, 50)
-                    statRow(title: "Записи лекарств", count: medicationEntries.count, icon: "list.clipboard.fill", color: .blue)
-                    Divider().padding(.leading, 50)
-                    statRow(title: "Продукты", count: foodItems.count, icon: "apple.logo", color: .green)
-                    Divider().padding(.leading, 50)
-                    statRow(title: "Записи продуктов", count: foodEntries.count, icon: "fork.knife", color: .green)
-                    Divider().padding(.leading, 50)
-                    statRow(title: "Зоны тела", count: bodyAreas.count, icon: "figure.walk", color: .orange)
-                    Divider().padding(.leading, 50)
-                    statRow(title: "Оценки здоровья", count: bodyAreaRatings.count, icon: "heart.text.square.fill", color: .red)
-                }
-                .cardStyle()
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 20, trailing: .appHorizontalPadding))
-            }
-            
-            Section {
-                StandardHeader(title: "Опасная зона")
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 8, trailing: 0))
-                
+            Section("Опасная зона") {
                 Button(role: .destructive) {
                     showDeleteConfirmation = true
                 } label: {
-                    HStack {
-                        Label("Стереть все данные", systemImage: "trash.fill")
-                            .foregroundStyle(.red)
-                            .fontWeight(.semibold)
-                        Spacer()
-                    }
-                    .padding()
-                    .cardStyle()
+                    Label("Стереть все данные", systemImage: "trash.fill")
+                        .foregroundStyle(.red)
                 }
-                .buttonStyle(.plain)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 0, leading: .appHorizontalPadding, bottom: 40, trailing: .appHorizontalPadding))
             }
         }
-        .listStyle(.plain)
-        .background(Color(.systemGroupedBackground))
+        .listStyle(.insetGrouped)
         .navigationTitle("Данные")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Удалить все данные?", isPresented: $showDeleteConfirmation) {
@@ -79,29 +37,7 @@ struct DataManagementView: View {
         }
     }
     
-    private func statRow(title: String, count: Int, icon: String, color: Color) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(color)
-                .frame(width: 30)
-            
-            Text(title)
-                .font(.subheadline)
-            
-            Spacer()
-            
-            Text("\(count)")
-                .font(.subheadline)
-                .fontWeight(.bold)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-        }
-        .padding()
-    }
-    
     private func deleteAllData() {
-        // Delete all entities
         medicationEntries.forEach { modelContext.delete($0) }
         medications.forEach { modelContext.delete($0) }
         foodEntries.forEach { modelContext.delete($0) }
