@@ -1,8 +1,7 @@
-import SwiftUI
-import SwiftData
+import HealthcheckCore
 
 @main
-struct HealthcheckApp: App {
+public struct HealthcheckApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
