@@ -49,11 +49,10 @@ struct AddMedicationView: View {
                             titleProvider: { $0.name },
                             accentColor: .medicationBlue
                         ) { template in
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                selectedTemplate = template
-                                selectedMedication = template.medication
-                                selectedBodyAreas = Set(template.bodyAreas.map(\.id))
-                            }
+                            selectedTemplate = template
+                            selectedMedication = template.medication
+                            selectedBodyAreas = Set(template.bodyAreas.map(\.id))
+                            saveEntry()
                         }
                     } else {
                         SelectionTilePanel(
@@ -78,9 +77,11 @@ struct AddMedicationView: View {
                         }
                     }
                     
-                    Section("Комментарий") {
-                        TextField("Дополнительная информация...", text: $comment, axis: .vertical)
-                            .lineLimit(3...10)
+                    if useManual {
+                        Section("Комментарий") {
+                            TextField("Дополнительная информация...", text: $comment, axis: .vertical)
+                                .lineLimit(3...10)
+                        }
                     }
                 }
             }
@@ -91,10 +92,12 @@ struct AddMedicationView: View {
                     Button("Отмена") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    let canSave = selectedMedication != nil && !selectedBodyAreas.isEmpty
-                    Button("Готово", action: saveEntry)
-                        .fontWeight(.bold)
-                        .disabled(!canSave)
+                    if useManual {
+                        let canSave = selectedMedication != nil && !selectedBodyAreas.isEmpty
+                        Button("Готово", action: saveEntry)
+                            .fontWeight(.bold)
+                            .disabled(!canSave)
+                    }
                 }
             }
             .overlay {
