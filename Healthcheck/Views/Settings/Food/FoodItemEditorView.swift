@@ -11,12 +11,14 @@ struct FoodItemEditorView: View {
     @State private var editEmoji: String = ""
     @State private var editDangerLevel: Int = 1
     @State private var editIsFavorite: Bool = false
+    @State private var editType: FoodType = .food
     @State private var showDeleteConfirmation = false
     
     @State private var originalName: String = ""
     @State private var originalEmoji: String = ""
     @State private var originalDangerLevel: Int = 1
     @State private var originalIsFavorite: Bool = false
+    @State private var originalType: FoodType = .food
     
     private var isNew: Bool { food == nil }
     
@@ -24,7 +26,8 @@ struct FoodItemEditorView: View {
         editName != originalName ||
         editEmoji != originalEmoji ||
         editDangerLevel != originalDangerLevel ||
-        editIsFavorite != originalIsFavorite
+        editIsFavorite != originalIsFavorite ||
+        editType != originalType
     }
     
     var body: some View {
@@ -45,7 +48,8 @@ struct FoodItemEditorView: View {
                 name: $editName,
                 emoji: $editEmoji,
                 dangerLevel: $editDangerLevel,
-                isFavorite: $editIsFavorite
+                isFavorite: $editIsFavorite,
+                type: $editType
             )
             
             if food != nil {
@@ -90,10 +94,12 @@ struct FoodItemEditorView: View {
                 editEmoji = f.emoji
                 editDangerLevel = f.dangerLevel
                 editIsFavorite = f.isFavorite
+                editType = f.type
                 originalName = f.name
                 originalEmoji = f.emoji
                 originalDangerLevel = f.dangerLevel
                 originalIsFavorite = f.isFavorite
+                originalType = f.type
             } else {
                 editEmoji = "🍎"
             }
@@ -117,19 +123,20 @@ struct FoodItemEditorView: View {
             name: editName,
             emoji: editEmoji,
             isFavorite: editIsFavorite,
-            dangerLevel: editDangerLevel
+            dangerLevel: editDangerLevel,
+            type: editType
         )
         modelContext.insert(newItem)
         try? modelContext.save()
         dismiss()
     }
-    
     private func updateFoodItem() {
         guard let f = food else { return }
         if !editName.isEmpty { f.name = editName }
         if !editEmoji.isEmpty { f.emoji = editEmoji }
         f.dangerLevel = editDangerLevel
         f.isFavorite = editIsFavorite
+        f.type = editType
         try? modelContext.save()
     }
 }
@@ -140,6 +147,7 @@ struct FoodItemFields: View {
     @Binding var emoji: String
     @Binding var dangerLevel: Int
     @Binding var isFavorite: Bool
+    @Binding var type: FoodType
     
     var body: some View {
         Section("Основная информация") {
@@ -151,6 +159,12 @@ struct FoodItemFields: View {
             }
             
             Toggle("Избранное", isOn: $isFavorite)
+            
+            Picker("Тип", selection: $type) {
+                ForEach(FoodType.allCases, id: \.self) { type in
+                    Text(type.localizedName).tag(type)
+                }
+            }
         }
         
         Section("Параметры") {

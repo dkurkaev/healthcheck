@@ -9,27 +9,42 @@ struct AddFoodView: View {
     private var existingFoods: [FoodItem]
     
     @State private var searchText = ""
+    @State private var selectedType: FoodType = .food
     @State private var showCreateNew = false
     
     var favorites: [FoodItem] {
-        existingFoods.filter { $0.isFavorite }
+        existingFoods.filter { $0.isFavorite && $0.type == selectedType }
     }
     
     var filteredSearch: [FoodItem] {
         if searchText.isEmpty { return [] }
-        return existingFoods.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        return existingFoods.filter { 
+            $0.name.localizedCaseInsensitiveContains(searchText) && 
+            $0.type == selectedType 
+        }
     }
     
     var body: some View {
         NavigationStack {
-            Form {
-                // Quick Search
-                Section {
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundStyle(.secondary)
-                        TextField("Поиск продукта...", text: $searchText)
+            VStack(spacing: 0) {
+                Picker("Тип", selection: $selectedType) {
+                    ForEach(FoodType.allCases, id: \.self) { type in
+                        Text(type.localizedName).tag(type)
                     }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, .appHorizontalPadding)
+                .padding(.vertical, 12)
+                .background(Color(.systemGroupedBackground))
+                
+                Form {
+                    // Quick Search
+                    Section {
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundStyle(.secondary)
+                            TextField("Поиск \(selectedType == .food ? "продукта" : "напитка")...", text: $searchText)
+                        }
                     
                     if !filteredSearch.isEmpty {
                         ForEach(filteredSearch.prefix(5)) { item in
@@ -104,7 +119,8 @@ struct AddFoodView: View {
                 }
             }
             .sheet(isPresented: $showCreateNew) {
-                CreateFoodItemInlineView(onSave: { dismiss() })
+                CreateFoodItemInlineView(initialType: selectedType, onSave: { dismiss() })
+            }
             }
         }
     }
@@ -122,18 +138,26 @@ struct CreateFoodItemInlineView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
+    var initialType: FoodType = .food
     var onSave: (() -> Void)? = nil
     
     @State private var name = ""
     @State private var emoji = "🍎"
     @State private var dangerLevel = 1
     @State private var isFavorite = false
+    @State private var selectedType: FoodType = .food
     @State private var saveToFeed = true
     
     var body: some View {
         NavigationStack {
             Form {
-                FoodItemFields(name: $name, emoji: $emoji, dangerLevel: $dangerLevel, isFavorite: $isFavorite)
+                FoodItemFields(
+                    name: $name,
+                    emoji: $emoji,
+                    dangerLevel: $dangerLevel,
+                    isFavorite: $isFavorite,
+                    type: $selectedType
+                )
                 
                 Section {
                     Toggle("Сохранить в ленту еды", isOn: $saveToFeed)
@@ -155,6 +179,12 @@ struct CreateFoodItemInlineView: View {
                         .disabled(name.isEmpty)
                 }
             }
+            .onAppear {
+                selectedType = initialType
+                if initialType == .beverage {
+                    emoji = "🥤"
+                }
+            }
         }
     }
     
@@ -163,7 +193,8 @@ struct CreateFoodItemInlineView: View {
             name: name,
             emoji: emoji,
             isFavorite: isFavorite,
-            dangerLevel: dangerLevel
+            dangerLevel: dangerLevel,
+            type: selectedType
         )
         modelContext.insert(food)
         

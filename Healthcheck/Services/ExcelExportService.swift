@@ -38,16 +38,18 @@ struct ExcelExportService {
         let s2 = workbook.addSheet(name: "Еда")
         s2.setCell(row: 1, column: 1, cell: Cell.string("Дата", format: headerFormat))
         s2.setCell(row: 1, column: 2, cell: Cell.string("Продукт", format: headerFormat))
-        s2.setCell(row: 1, column: 3, cell: Cell.string("Опасность", format: headerFormat))
-        s2.setCell(row: 1, column: 4, cell: Cell.string("Заметка", format: headerFormat))
+        s2.setCell(row: 1, column: 3, cell: Cell.string("Тип", format: headerFormat))
+        s2.setCell(row: 1, column: 4, cell: Cell.string("Опасность", format: headerFormat))
+        s2.setCell(row: 1, column: 5, cell: Cell.string("Заметка", format: headerFormat))
         
         let sortedFood = foodEntries.sorted(by: { $0.timestamp > $1.timestamp })
         for (i, entry) in sortedFood.enumerated() {
             let row = i + 2
             s2.setCell(row: row, column: 1, cell: Cell.string(df.string(from: entry.timestamp)))
             s2.setCell(row: row, column: 2, cell: Cell.string(entry.foodItem?.name ?? ""))
-            s2.setCell(row: row, column: 3, cell: Cell.integer(entry.foodItem?.dangerLevel ?? 0))
-            s2.setCell(row: row, column: 4, cell: Cell.string(entry.note))
+            s2.setCell(row: row, column: 3, cell: Cell.string(entry.foodItem?.type.localizedName ?? "Еда"))
+            s2.setCell(row: row, column: 4, cell: Cell.integer(entry.foodItem?.dangerLevel ?? 0))
+            s2.setCell(row: row, column: 5, cell: Cell.string(entry.note))
         }
         
         // --- Sheet 3: Medication (Лекарства) ---

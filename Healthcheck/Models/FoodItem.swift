@@ -1,6 +1,18 @@
 import Foundation
 import SwiftData
 
+enum FoodType: String, Codable, CaseIterable {
+    case food = "food"
+    case beverage = "beverage"
+    
+    var localizedName: String {
+        switch self {
+        case .food: return "Еда"
+        case .beverage: return "Напиток"
+        }
+    }
+}
+
 @Model
 final class FoodItem: EditableListItem {
     var id: UUID
@@ -10,6 +22,12 @@ final class FoodItem: EditableListItem {
     var dangerLevel: Int // 1-5 (1=safe, 5=very dangerous)
     var sortOrder: Int?
     var createdAt: Date
+    var _type: FoodType?
+    
+    var type: FoodType {
+        get { _type ?? .food }
+        set { _type = newValue }
+    }
     
     @Relationship(deleteRule: .cascade, inverse: \FoodEntry.foodItem)
     var entries: [FoodEntry]
@@ -19,7 +37,8 @@ final class FoodItem: EditableListItem {
         emoji: String = "🍽",
         isFavorite: Bool = false,
         dangerLevel: Int = 1,
-        sortOrder: Int? = 0
+        sortOrder: Int? = 0,
+        type: FoodType = .food
     ) {
         self.id = UUID()
         self.name = name
@@ -28,6 +47,7 @@ final class FoodItem: EditableListItem {
         self.dangerLevel = min(max(dangerLevel, 1), 5)
         self.sortOrder = sortOrder
         self.createdAt = Date()
+        self._type = type
         self.entries = []
     }
     
