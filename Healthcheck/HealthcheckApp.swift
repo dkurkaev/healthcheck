@@ -17,7 +17,9 @@ struct HealthcheckApp: App {
             FoodEntry.self,
             Medication.self,
             MedicationTemplate.self,
-            MedicationEntry.self
+            MedicationEntry.self,
+            OtherImpact.self,
+            OtherImpactEntry.self
         ]) { result in
             switch result {
             case .success(let container):

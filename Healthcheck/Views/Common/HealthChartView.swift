@@ -15,6 +15,9 @@ struct HealthChartView: View {
     @Query(sort: \MedicationEntry.timestamp, order: .reverse)
     private var medicationEntries: [MedicationEntry]
     
+    @Query(sort: \OtherImpactEntry.timestamp, order: .reverse)
+    private var otherImpactEntries: [OtherImpactEntry]
+    
     @Query(sort: \BodyAreaRating.timestamp)
     private var allRatings: [BodyAreaRating]
     
@@ -214,6 +217,13 @@ struct HealthChartView: View {
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                         .foregroundStyle(.medicationBlue.opacity(0.4))
                 }
+                
+                let dayOther = otherImpactEntries.filter { $0.timestamp >= startOfToday && $0.timestamp <= endOfToday }
+                ForEach(dayOther) { impact in
+                    RuleMark(x: .value("Дата", impact.timestamp))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        .foregroundStyle(Color.orange.opacity(0.4))
+                }
             }
         }
         .frame(height: 200)
@@ -347,6 +357,10 @@ struct HealthChartView: View {
             return true
         }
         if let med { return (med.medication?.emoji ?? "💊", med.medication?.name ?? "Лекарство") }
+        
+        let other = otherImpactEntries.first { abs($0.timestamp.timeIntervalSince(date)) < threshold }
+        if let other { return (other.impact?.emoji ?? "☀️", other.impact?.name ?? "Воздействие") }
+        
         return nil
     }
 }

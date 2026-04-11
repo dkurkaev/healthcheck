@@ -153,3 +153,52 @@ struct RatingTransactionDetailView: View {
         .sheet(isPresented: $showEditSheet) { EditRatingViewFromHistory(ratings: ratings, timestamp: timestamp) }
     }
 }
+
+struct OtherImpactEntryDetailView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    let entry: OtherImpactEntry
+    
+    @State private var timestamp: Date
+    @State private var note: String
+    
+    init(entry: OtherImpactEntry) {
+        self.entry = entry
+        _timestamp = State(initialValue: entry.timestamp)
+        _note = State(initialValue: entry.note)
+    }
+    
+    var hasChanges: Bool {
+        timestamp != entry.timestamp || note != entry.note
+    }
+    
+    var body: some View {
+        Form {
+            Section {
+                HStack(spacing: 16) {
+                    Text(entry.impact?.emoji ?? "☀️").font(.system(size: 40)).padding(8).background(Color.orange.opacity(0.1)).clipShape(Circle())
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(entry.impact?.name ?? "Воздействие").font(.headline)
+                    }
+                }
+                .padding(.vertical, 8)
+            }
+            Section { DatePicker("Дата и время", selection: $timestamp) } header: { Text("Время приема") }
+            Section { TextEditor(text: $note).frame(minHeight: 100) } header: { Text("Заметка") }
+        }
+        .navigationTitle("Детали записи")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Сохранить") {
+                    entry.timestamp = timestamp
+                    entry.note = note
+                    try? modelContext.save()
+                    dismiss()
+                }
+                .fontWeight(.bold)
+                .disabled(!hasChanges)
+            }
+        }
+    }
+}

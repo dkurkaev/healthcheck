@@ -63,7 +63,13 @@ struct AppHistoryList<T: DeletableHistoryItem, Content: View>: View {
     
     var body: some View {
         if items.isEmpty {
-            Text(emptyMessage).font(.subheadline).foregroundStyle(.secondary).frame(maxWidth: .infinity).padding(.vertical, 40).listRowBackground(Color.clear)
+            Text(emptyMessage)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 40)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
         } else {
             let displayList = limit != nil ? Array(items.prefix(limit!)) : items
             ForEach(displayList, id: \.stableID) { item in

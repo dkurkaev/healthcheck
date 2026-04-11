@@ -13,24 +13,31 @@ struct MainView: View {
     @Query(sort: \BodyAreaRating.timestamp, order: .reverse)
     private var recentRatings: [BodyAreaRating]
     
+    @Query(sort: \OtherImpactEntry.timestamp, order: .reverse)
+    private var recentOtherImpactEntries: [OtherImpactEntry]
+    
     @Query(sort: \BodyArea.sortOrder)
     private var bodyAreas: [BodyArea]
     
     @State private var showAddFood = false
     @State private var showAddMedication = false
     @State private var showAddRatings = false
+    @State private var showAddOtherImpact = false
     @State private var selectedHistoryType: HistoryType = .ratings
+    @State private var healthStatusHeight: CGFloat = 0
     
     enum HistoryType: String, CaseIterable {
         case ratings = "Оценки"
         case food = "Еда"
         case meds = "Лекарства"
+        case other = "Прочее"
         
         var icon: String {
             switch self {
             case .ratings: return "star.bubble.fill"
             case .food: return "fork.knife"
             case .meds: return "pills.fill"
+            case .other: return "sun.max.fill"
             }
         }
     }
@@ -44,7 +51,29 @@ struct MainView: View {
                             QuickActionButton(title: "Еда", emoji: "🍽", gradient: .foodGradient, action: { showAddFood = true })
                             QuickActionButton(title: "Лекарство", emoji: "💊", gradient: .medicationGradient, action: { showAddMedication = true })
                         }
-                        healthStatusCard
+                        
+                        HStack(spacing: 12) {
+                            healthStatusCard
+                                .background(
+                                    GeometryReader { geo in
+                                        Color.clear
+                                            .onAppear { healthStatusHeight = geo.size.height }
+                                            .onChange(of: geo.size.height) { healthStatusHeight = geo.size.height }
+                                    }
+                                )
+                            
+                            Button(action: { showAddOtherImpact = true }) {
+                                ZStack {
+                                    Color.orange
+                                    Image(systemName: "sun.max.fill")
+                                        .font(.title2)
+                                        .foregroundStyle(.white)
+                                }
+                                .frame(width: healthStatusHeight, height: healthStatusHeight)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                     .padding(.vertical, 16)
                 }
@@ -95,6 +124,12 @@ struct MainView: View {
                                 TimelineRow(emoji: entry.medication?.emoji ?? "💊", title: entry.medication?.name ?? "Лекарство", subtitle: entry.bodyAreas.map(\.emoji).joined(separator: " "), time: entry.timestamp.relativeString, accentColor: Color.medicationBlue)
                             }
                         }
+                    case .other:
+                        AppHistoryList(items: recentOtherImpactEntries, limit: 30, emptyMessage: "Пока нет прочих записей") { entry in
+                            NavigationLink(destination: OtherImpactEntryDetailView(entry: entry)) {
+                                TimelineRow(emoji: entry.impact?.emoji ?? "☀️", title: entry.impact?.name ?? "Воздействие", subtitle: entry.note, time: entry.timestamp.relativeString, accentColor: Color.orange)
+                            }
+                        }
                     }
                 }
             }
@@ -102,6 +137,7 @@ struct MainView: View {
             .navigationTitle("Хелс чек")
             .sheet(isPresented: $showAddFood) { AddFoodView() }
             .sheet(isPresented: $showAddMedication) { AddMedicationView() }
+            .sheet(isPresented: $showAddOtherImpact) { AddOtherImpactView() }
             .sheet(isPresented: $showAddRatings) { AddRatingsView() }
         }
     }
@@ -137,18 +173,12 @@ struct HistoryTabButton: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.caption)
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(isSelected ? Color.blue : Color.secondary.opacity(0.1))
-            .foregroundStyle(isSelected ? .white : .primary)
-            .clipShape(Capsule())
+            Image(systemName: icon)
+                .font(.headline)
+                .frame(width: 44, height: 44)
+                .background(isSelected ? Color.blue : Color.secondary.opacity(0.1))
+                .foregroundStyle(isSelected ? .white : .primary)
+                .clipShape(Circle())
         }
         .buttonStyle(.plain)
     }

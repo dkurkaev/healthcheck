@@ -60,6 +60,10 @@ struct SettingsView: View {
                         Label("Управление продуктами", systemImage: "fork.knife")
                     }
                     
+                    NavigationLink(destination: OtherImpactListView()) {
+                        Label("Управление прочими воздействиями", systemImage: "sun.max.fill")
+                    }
+                    
                     NavigationLink(destination: BodyAreaListView()) {
                         Label("Управление зонами тела", systemImage: "figure.stand")
                     }
