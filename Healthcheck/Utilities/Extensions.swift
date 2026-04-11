@@ -2,29 +2,35 @@ import Foundation
 import SwiftUI
 
 extension Date {
+    private enum Formatters {
+        static let time: DateFormatter = {
+            let f = DateFormatter()
+            f.dateFormat = "HH:mm"
+            return f
+        }()
+        
+        static let short: DateFormatter = {
+            let f = DateFormatter()
+            f.dateFormat = "d MMM"
+            f.locale = Locale(identifier: "ru_RU")
+            return f
+        }()
+        
+        static let full: DateFormatter = {
+            let f = DateFormatter()
+            f.dateFormat = "d MMMM yyyy"
+            f.locale = Locale(identifier: "ru_RU")
+            return f
+        }()
+    }
+    
     var isToday: Bool { Calendar.current.isDateInToday(self) }
     var isYesterday: Bool { Calendar.current.isDateInYesterday(self) }
     var startOfDay: Date { Calendar.current.startOfDay(for: self) }
     
-    var timeString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: self)
-    }
-    
-    var shortDateString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d MMM"
-        formatter.locale = Locale(identifier: "ru_RU")
-        return formatter.string(from: self)
-    }
-    
-    var fullDateString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d MMMM yyyy"
-        formatter.locale = Locale(identifier: "ru_RU")
-        return formatter.string(from: self)
-    }
+    var timeString: String { Formatters.time.string(from: self) }
+    var shortDateString: String { Formatters.short.string(from: self) }
+    var fullDateString: String { Formatters.full.string(from: self) }
     
     var relativeString: String {
         if isToday { return "Сегодня, \(timeString)" }

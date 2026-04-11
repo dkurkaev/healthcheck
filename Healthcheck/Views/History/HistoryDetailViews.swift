@@ -2,8 +2,23 @@ import SwiftUI
 import SwiftData
 
 struct FoodEntryDetailView: View {
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Bindable var entry: FoodEntry
+    let entry: FoodEntry
+    
+    @State private var timestamp: Date
+    @State private var note: String
+    
+    init(entry: FoodEntry) {
+        self.entry = entry
+        _timestamp = State(initialValue: entry.timestamp)
+        _note = State(initialValue: entry.note)
+    }
+    
+    var hasChanges: Bool {
+        timestamp != entry.timestamp || note != entry.note
+    }
+    
     var body: some View {
         Form {
             Section {
@@ -16,18 +31,49 @@ struct FoodEntryDetailView: View {
                 }
                 .padding(.vertical, 8)
             }
-            Section { DatePicker("Дата и время", selection: $entry.timestamp) } header: { Text("Время приема") }
-            Section { TextEditor(text: $entry.note).frame(minHeight: 100) } header: { Text("Заметка") }
+            Section { DatePicker("Дата и время", selection: $timestamp) } header: { Text("Время приема") }
+            Section { TextEditor(text: $note).frame(minHeight: 100) } header: { Text("Заметка") }
         }
         .navigationTitle("Детали записи")
-        .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Готово") { dismiss() } } }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Сохранить") {
+                    entry.timestamp = timestamp
+                    entry.note = note
+                    try? modelContext.save()
+                    dismiss()
+                }
+                .fontWeight(.bold)
+                .disabled(!hasChanges)
+            }
+        }
     }
 }
 
 struct MedicationEntryDetailView: View {
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Bindable var entry: MedicationEntry
+    let entry: MedicationEntry
     @Query(sort: \BodyArea.sortOrder) private var allBodyAreas: [BodyArea]
+    
+    @State private var timestamp: Date
+    @State private var note: String
+    @State private var selectedBodyAreas: Set<UUID>
+    
+    init(entry: MedicationEntry) {
+        self.entry = entry
+        _timestamp = State(initialValue: entry.timestamp)
+        _note = State(initialValue: entry.note)
+        _selectedBodyAreas = State(initialValue: Set(entry.bodyAreas.map(\.id)))
+    }
+    
+    var hasChanges: Bool {
+        timestamp != entry.timestamp || 
+        note != entry.note || 
+        selectedBodyAreas != Set(entry.bodyAreas.map(\.id))
+    }
+    
     var body: some View {
         Form {
             Section {
@@ -37,14 +83,14 @@ struct MedicationEntryDetailView: View {
                 }
                 .padding(.vertical, 8)
             }
-            Section { DatePicker("Дата и время", selection: $entry.timestamp) } header: { Text("Время приема") }
+            Section { DatePicker("Дата и время", selection: $timestamp) } header: { Text("Время приема") }
             Section {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                     ForEach(allBodyAreas) { area in
-                        let isSelected = entry.bodyAreas.contains(where: { $0.id == area.id })
+                        let isSelected = selectedBodyAreas.contains(area.id)
                         Button(action: {
-                            if isSelected { entry.bodyAreas.removeAll(where: { $0.id == area.id }) }
-                            else { entry.bodyAreas.append(area) }
+                            if isSelected { selectedBodyAreas.remove(area.id) }
+                            else { selectedBodyAreas.insert(area.id) }
                         }) {
                             VStack(spacing: 4) { Text(area.emoji).font(.title3); Text(area.name).font(.caption2).lineLimit(1) }
                             .frame(maxWidth: .infinity).padding(.vertical, 8).background(isSelected ? Color.medicationBlue : Color(.tertiarySystemBackground)).foregroundStyle(isSelected ? .white : .primary).clipShape(RoundedRectangle(cornerRadius: 10))
@@ -54,10 +100,23 @@ struct MedicationEntryDetailView: View {
                 }
                 .padding(.vertical, 8)
             } header: { Text("Зоны применения") }
-            Section { TextEditor(text: $entry.note).frame(minHeight: 100) } header: { Text("Заметка") }
+            Section { TextEditor(text: $note).frame(minHeight: 100) } header: { Text("Заметка") }
         }
-        .navigationTitle("Детали лекарства")
-        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Готово") { dismiss() } } }
+        .navigationTitle("Детали записи")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Сохранить") {
+                    entry.timestamp = timestamp
+                    entry.note = note
+                    entry.bodyAreas = allBodyAreas.filter { selectedBodyAreas.contains($0.id) }
+                    try? modelContext.save()
+                    dismiss()
+                }
+                .fontWeight(.bold)
+                .disabled(!hasChanges)
+            }
+        }
     }
 }
 
@@ -89,6 +148,7 @@ struct RatingTransactionDetailView: View {
             } header: { Text("Оценки по зонам (\(ratings.count))") }
         }
         .navigationTitle("Детали оценки")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .primaryAction) { Button("Изменить") { showEditSheet = true } } }
         .sheet(isPresented: $showEditSheet) { EditRatingViewFromHistory(ratings: ratings, timestamp: timestamp) }
     }

@@ -23,12 +23,19 @@ struct RatingTransaction: DeletableHistoryItem {
     
     // Централизованная логика группировки
     static func group(_ ratings: [BodyAreaRating]) -> [RatingTransaction] {
-        let grouped = Dictionary(grouping: ratings) { rating -> String in
-            let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: rating.timestamp)
-            return "\(components.year ?? 0)-\(components.month ?? 0)-\(components.day ?? 0)-\(components.hour ?? 0)-\(components.minute ?? 0)"
+        guard !ratings.isEmpty else { return [] }
+        
+        // Группируем по минутам через TimeInterval для скорости
+        let grouped = Dictionary(grouping: ratings) { rating -> Int in
+            Int(rating.timestamp.timeIntervalSince1970 / 60)
         }
+        
         return grouped.map { key, ratings in
-            RatingTransaction(id: key, timestamp: ratings.first?.timestamp ?? Date(), ratings: ratings.sorted { ($0.bodyArea?.sortOrder ?? 0) < ($1.bodyArea?.sortOrder ?? 0) })
+            RatingTransaction(
+                id: "\(key)",
+                timestamp: ratings.first?.timestamp ?? Date(),
+                ratings: ratings
+            )
         }.sorted { $0.timestamp > $1.timestamp }
     }
     
